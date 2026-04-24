@@ -1,6 +1,6 @@
-# Webhook Admin — Sitecore XM Cloud Dashboard Widget
+# Experience Edge Webhook Admin
 
-A browser-based admin tool for managing **Experience Edge webhooks** on Sitecore XM Cloud. Built as a [Sitecore Marketplace](https://marketplace.sitecore.com/) dashboard widget using Next.js 15 and the Marketplace SDK.
+A browser-based admin tool for managing **Experience Edge webhooks** on SitecoreAI. Built as a [Sitecore Marketplace](https://marketplace.sitecore.com/) dashboard widget using Next.js 16 and the Marketplace SDK.
 
 ---
 
@@ -26,7 +26,7 @@ A browser-based admin tool for managing **Experience Edge webhooks** on Sitecore
 
 ## Overview
 
-The Webhook Admin widget gives XM Cloud teams a single place to:
+The Webhook Admin widget gives SitecoreAI teams a single place to:
 
 | Capability | Detail |
 |---|---|
@@ -47,20 +47,9 @@ The widget connects directly to the [Edge Admin API](https://doc.sitecore.com/sa
 ### Prerequisites
 
 - Node.js 18 or later
-- An XM Cloud environment with Edge Admin API access
+- A SitecoreAI environment with Edge Admin API access
 - A Sitecore OAuth **Client ID** and **Client secret** with permission to manage webhooks
 
-### Install and run
-
-```bash
-npm install
-npm run dev
-```
-
-The app runs at `http://localhost:3000` by default.
-
-> **Running inside Sitecore Marketplace**  
-> To test the widget embedded in the XM Cloud Dashboard, register it as a local extension using the [Marketplace Quickstart](https://guidovtricht.nl/blog/sitecore-marketplace-quickstart) browser-console snippet.
 
 ---
 
@@ -73,8 +62,8 @@ Before you can manage webhooks, you must establish a session. Click the **Settin
 | Field | Description |
 |---|---|
 | **Edge Admin API base URL** | Pre-filled — `https://edge.sitecorecloud.io/api/admin/v1`. Read-only. |
-| **Client ID** | Your Sitecore OAuth client ID (begins with `client_…`). |
-| **Client secret** | Your OAuth client secret. Hidden by default; click the eye icon to reveal. |
+| **Client ID** | Your Sitecore OAuth client ID. |
+| **Client Secret** | Your OAuth client secret. Hidden by default; click the eye icon to reveal. |
 
 Click **Connect** to exchange your credentials for a short-lived JWT. The credentials are discarded immediately after the token is received — only the JWT is retained (in `sessionStorage`).
 
@@ -154,7 +143,7 @@ The four cards at the top always reflect the full unfiltered list, so your overa
 | Field | Required | Notes |
 |---|---|---|
 | **Name** | Yes | Human-readable label for the webhook |
-| **URI** | Yes | Must be a valid `http://` or `https://` URL |
+| **URI** | Yes | Must be a valid `https://` URL |
 | **HTTP Method** | Yes | `POST` (default) or `GET` |
 | **Execution mode** | Yes | See table below |
 | **Body** | No | JSON payload sent with `OnEnd` requests |

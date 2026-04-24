@@ -65,7 +65,7 @@ export function ExecutionLog({ webhooks, onRefresh, loading }: ExecutionLogProps
 
       <ul className="divide-y divide-gray-100">
         {rows.map((row, i) => (
-          <li key={i} className="flex items-center gap-3 px-4 py-2.5 text-xs">
+          <li key={i} className="flex items-center gap-3 px-4 py-2.5 text-xs transition-colors motion-reduce:transition-none hover:bg-gray-50">
             {/* Pass / Fail badge */}
             <div className="w-14 shrink-0">
               <span

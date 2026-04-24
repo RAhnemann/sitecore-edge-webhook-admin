@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId, Children, isValidElement, cloneElement, type ReactNode, type ReactElement, type HTMLAttributes } from "react";
 import type { Webhook, WebhookEdit, ExecutionMode, HttpMethod } from "@/types/webhook";
 import { useTranslation } from "@/context/LanguageContext";
 
@@ -82,7 +82,7 @@ export function WebhookForm({
     const errs: Record<string, string> = {};
     if (!form.label.trim()) errs.label = t.errorLabelRequired;
     if (!form.uri.trim()) errs.uri = t.errorUriRequired;
-    else if (!/^https?:\/\/.+/.test(form.uri)) errs.uri = t.errorUriFormat;
+    else if (!/^https:\/\/.+/.test(form.uri)) errs.uri = t.errorUriFormat;
     if (form.executionMode === "OnUpdate" && form.bodyInclude) {
       try { JSON.parse(form.bodyInclude); }
       catch { errs.bodyInclude = t.errorBodyIncludeJson; }
@@ -91,7 +91,8 @@ export function WebhookForm({
     return Object.keys(errs).length === 0;
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(e: { preventDefault(): void }) {
+    e.preventDefault();
     if (!validate()) return;
     const payload: WebhookEdit = {
       label: form.label.trim(),
@@ -111,10 +112,10 @@ export function WebhookForm({
   const isEdit = !!initial;
 
   return (
-    <div className="space-y-3">
+    <form onSubmit={handleSubmit} noValidate aria-busy={isSubmitting} className="space-y-3">
       {/* Basic details */}
-      <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-3">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t.basicDetails}</p>
+      <div role="group" aria-labelledby="section-basic" className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-3">
+        <p id="section-basic" className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t.basicDetails}</p>
 
         <Field label={t.labelField} error={errors.label}>
           <input
@@ -150,8 +151,8 @@ export function WebhookForm({
       </div>
 
       {/* Execution */}
-      <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-3">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t.execution}</p>
+      <div role="group" aria-labelledby="section-execution" className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-3">
+        <p id="section-execution" className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t.execution}</p>
 
         <div className="grid grid-cols-2 gap-2">
           <Field label={t.executionMode}>
@@ -166,9 +167,12 @@ export function WebhookForm({
           </Field>
 
           <Field label={t.createdBy}>
-            <div className="px-2.5 py-1.5 text-sm border border-gray-100 rounded-lg bg-gray-50 text-gray-400 select-all">
-              {form.createdBy || "—"}
-            </div>
+            <input
+              type="text"
+              value={form.createdBy || "—"}
+              disabled
+              className={input() + " text-gray-400 cursor-not-allowed"}
+            />
           </Field>
         </div>
 
@@ -192,14 +196,14 @@ export function WebhookForm({
               placeholder='{"key": "value"}'
               className={input(errors.bodyInclude) + " resize-none"}
             />
-            <p className="text-xs text-gray-400 mt-1">{t.bodyIncludeHint}</p>
+            <p className="text-xs text-gray-500 mt-1">{t.bodyIncludeHint}</p>
           </Field>
         )}
       </div>
 
       {/* Custom headers */}
-      <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-2">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t.customHeaders}</p>
+      <div role="group" aria-labelledby="section-headers" className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-2">
+        <p id="section-headers" className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t.customHeaders}</p>
 
         {/* Existing headers */}
         {Object.entries(form.headers ?? {}).map(([k, v]) => (
@@ -213,7 +217,7 @@ export function WebhookForm({
               className="text-gray-400 hover:text-[#E24B4A] transition-colors"
               aria-label={`Remove header ${k}`}
             >
-              ✕
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
         ))}
@@ -225,6 +229,7 @@ export function WebhookForm({
             value={headerKey}
             onChange={(e) => setHeaderKey(e.target.value)}
             placeholder="x-api-key"
+            aria-label={t.headerName}
             className={input() + " flex-1"}
           />
           <input
@@ -232,6 +237,7 @@ export function WebhookForm({
             value={headerVal}
             onChange={(e) => setHeaderVal(e.target.value)}
             placeholder="value"
+            aria-label={t.headerValue}
             className={input() + " flex-1"}
           />
           <button
@@ -255,18 +261,18 @@ export function WebhookForm({
           {t.cancel}
         </button>
         <button
-          type="button"
-          onClick={handleSubmit}
+          type="submit"
           disabled={isSubmitting}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#534AB7] text-white hover:bg-[#3C3489] disabled:opacity-50 transition-colors"
         >
-          {isSubmitting ? (
-            <span className="inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-          ) : null}
+          {isSubmitting && (
+            <span aria-hidden="true" className="inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+          )}
           {isEdit ? t.saveChanges : t.createWebhook}
+          {isSubmitting && <span className="sr-only">{t.saving}</span>}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -274,12 +280,12 @@ export function WebhookForm({
 function input(error?: string) {
   return [
     "w-full px-2.5 py-1.5 text-sm rounded-lg border bg-white",
-    "focus:outline-none focus:ring-2 focus:ring-[#534AB7]/15 focus:border-[#7F77DD]",
+    "focus:outline-none focus:ring-2 focus:ring-[#534AB7] focus:border-[#7F77DD]",
     error ? "border-[#E24B4A]" : "border-gray-200",
   ].join(" ");
 }
 
-// Helper: labelled field wrapper
+// Helper: labelled field wrapper — auto-wires htmlFor/id, aria-describedby, and aria-invalid
 function Field({
   label,
   error,
@@ -287,13 +293,27 @@ function Field({
 }: {
   label: string;
   error?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const id = useId();
+  const errorId = `${id}-error`;
+
+  // Clone only the first child element to inject id + ARIA props
+  const enhanced = Children.map(children, (child, i) => {
+    if (i === 0 && isValidElement(child)) {
+      return cloneElement(child as ReactElement<HTMLAttributes<HTMLElement>>, {
+        id,
+        ...(error ? { "aria-describedby": errorId, "aria-invalid": true as const } : {}),
+      });
+    }
+    return child;
+  });
+
   return (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-500">{label}</label>
-      {children}
-      {error && <p className="text-xs text-[#E24B4A]">{error}</p>}
+      <label htmlFor={id} className="text-xs font-medium text-gray-600">{label}</label>
+      {enhanced}
+      {error && <p id={errorId} role="alert" className="text-xs text-[#E24B4A]">{error}</p>}
     </div>
   );
 }

@@ -121,7 +121,7 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
           return (
             <li key={webhook.id} className="relative">
               {/* Row */}
-              <div className="flex items-center gap-3 px-4 py-3">
+              <div className="flex items-center gap-3 px-4 py-3 transition-colors motion-reduce:transition-none hover:bg-gray-50">
                 {/* Status dot */}
                 <span
                   className={`w-2 h-2 rounded-full shrink-0 ${

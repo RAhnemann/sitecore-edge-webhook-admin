@@ -76,7 +76,6 @@ export function SettingsPanel({
       setIsConnected(true);
       onConnected();
     } catch (err) {
-      console.log(err);
       setError(err instanceof Error ? err.message : "Failed to fetch JWT.");
     } finally {
       setConnecting(false);

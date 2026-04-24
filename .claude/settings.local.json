@@ -5,7 +5,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:doc.sitecore.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx tsc *)"
     ]
   }
 }
