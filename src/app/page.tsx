@@ -23,6 +23,8 @@ export default function WebhookAdminPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "disabled">("all");
 
   // Sync connection state on mount
   useEffect(() => {
@@ -65,13 +67,24 @@ export default function WebhookAdminPage() {
 
   const username = currentUser?.nickname ?? currentUser?.name ?? (isInitialized ? "unknown" : "loading…");
 
-  // Summary counts
+  // Summary counts (always from full list)
   const total = webhooks.length;
   const active = webhooks.filter((w) => !w.disabled).length;
   const disabled = webhooks.filter((w) => w.disabled).length;
   const recentFails = webhooks.filter((w) =>
     w.lastRuns?.some((r) => !r.success)
   ).length;
+
+  // Filtered + searched list for the table
+  const visibleWebhooks = webhooks.filter((w) => {
+    if (filter === "active" && w.disabled) return false;
+    if (filter === "disabled" && !w.disabled) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      return w.label.toLowerCase().includes(q) || w.uri.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   const TAB_LABELS: Record<Tab, string> = {
     webhooks: t.tabWebhooks,
@@ -81,7 +94,7 @@ export default function WebhookAdminPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-full text-sm font-sans">
+    <div className="flex flex-col min-h-full text-sm font-sans max-w-[1280px] mx-auto w-full">
 
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 bg-[#EEEDFE] border-b border-gray-200">
@@ -105,20 +118,22 @@ export default function WebhookAdminPage() {
             />
             {connected ? t.sessionActive : t.notConnected}
           </button>
-          <button
-            onClick={() => setTab("create")}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#534AB7] text-white hover:bg-[#3C3489] transition-colors"
-          >
-            <span className="text-base leading-none">+</span>
-            {t.newWebhook}
-          </button>
+          {connected && (
+            <button
+              onClick={() => setTab("create")}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#534AB7] text-white hover:bg-[#3C3489] transition-colors"
+            >
+              <span className="text-base leading-none">+</span>
+              {t.newWebhook}
+            </button>
+          )}
           <LanguageSwitcher />
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 bg-white px-6">
-        {(["webhooks", "log", "create", "settings"] as Tab[]).map((tabKey) => (
+        {(["webhooks", "log", ...(connected ? ["create"] : []), "settings"] as Tab[]).map((tabKey) => (
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
@@ -161,12 +176,23 @@ export default function WebhookAdminPage() {
             <div className="flex items-center gap-2 px-6 py-3 border-b border-gray-100">
               <input
                 type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.searchWebhooks}
                 className="flex-1 max-w-xs px-3 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#7F77DD]"
               />
-              <button className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50">{t.filterAll}</button>
-              <button className="px-3 py-1.5 text-xs border border-[#1D9E75] text-[#1D9E75] rounded-lg hover:bg-[#E1F5EE]">{t.filterActive}</button>
-              <button className="px-3 py-1.5 text-xs border border-[#E24B4A] text-[#E24B4A] rounded-lg hover:bg-[#FCEBEB]">{t.filterDisabled}</button>
+              <button
+                onClick={() => setFilter("all")}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filter === "all" ? "bg-gray-100 border-gray-400 text-gray-800" : "border-gray-200 hover:bg-gray-50"}`}
+              >{t.filterAll}</button>
+              <button
+                onClick={() => setFilter("active")}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filter === "active" ? "bg-[#C2EDD9] border-[#1D9E75] text-[#085041]" : "border-[#1D9E75] text-[#1D9E75] hover:bg-[#E1F5EE]"}`}
+              >{t.filterActive}</button>
+              <button
+                onClick={() => setFilter("disabled")}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filter === "disabled" ? "bg-[#F5C0C0] border-[#E24B4A] text-[#791F1F]" : "border-[#E24B4A] text-[#E24B4A] hover:bg-[#FCEBEB]"}`}
+              >{t.filterDisabled}</button>
               <button
                 onClick={fetchWebhooks}
                 disabled={loading}
@@ -187,7 +213,7 @@ export default function WebhookAdminPage() {
             )}
             {!loading && !fetchError && (
               <WebhookList
-                webhooks={webhooks}
+                webhooks={visibleWebhooks}
                 currentUser={username}
                 onRefresh={fetchWebhooks}
               />
@@ -223,6 +249,7 @@ export default function WebhookAdminPage() {
               onDisconnected={() => {
                 setConnected(false);
                 setWebhooks([]);
+                setTab((prev) => (prev === "create" ? "webhooks" : prev));
               }}
             />
           </div>

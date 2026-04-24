@@ -52,34 +52,48 @@ export function ExecutionLog({ webhooks, onRefresh, loading }: ExecutionLogProps
       {rows.length === 0 && !loading && (
         <div className="py-10 text-center text-sm text-gray-400">{t.noExecutionHistory}</div>
       )}
+
+      {/* Column headers */}
+      {rows.length > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100 bg-gray-50">
+          <span className="w-14 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide">{t.logColResult}</span>
+          <span className="w-36 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide">{t.logColTime}</span>
+          <span className="flex-1 min-w-0 text-xs font-medium text-gray-400 uppercase tracking-wide">{t.logColWebhook}</span>
+          <span className="w-1/2 shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide">{t.logColMessage}</span>
+        </div>
+      )}
+
       <ul className="divide-y divide-gray-100">
         {rows.map((row, i) => (
           <li key={i} className="flex items-center gap-3 px-4 py-2.5 text-xs">
             {/* Pass / Fail badge */}
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                row.success
-                  ? "bg-[#E1F5EE] text-[#085041]"
-                  : "bg-[#FCEBEB] text-[#791F1F]"
-              }`}
-            >
-              {row.success ? t.runOk : t.runFail}
-            </span>
+            <div className="w-14 shrink-0">
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${
+                  row.success
+                    ? "bg-[#E1F5EE] text-[#085041]"
+                    : "bg-[#FCEBEB] text-[#791F1F]"
+                }`}
+              >
+                {row.success ? t.runOk : t.runFail}
+              </span>
+            </div>
 
             {/* Timestamp */}
-            <span className="text-gray-400 shrink-0 w-36">
+            <span className="text-gray-600 shrink-0 w-36">
               {formatTimestamp(row.timestamp, meta.locale, meta.hour12)}
             </span>
 
             {/* Webhook name */}
-            <span className="flex-1 text-gray-600 truncate">{row.webhookLabel}</span>
+            <span className="flex-1 min-w-0 text-gray-600 truncate">{row.webhookLabel}</span>
 
-            {/* Error message or HTTP hint */}
-            {row.message ? (
-              <span className="text-[#E24B4A] truncate max-w-[180px]">{row.message}</span>
-            ) : (
-              <span className="text-gray-300">—</span>
-            )}
+            {/* Error message or empty placeholder */}
+            <span className="w-1/2 shrink-0 truncate">
+              {row.message
+                ? <span className="text-[#E24B4A]">{row.message}</span>
+                : <span className="text-gray-300">—</span>
+              }
+            </span>
           </li>
         ))}
       </ul>

@@ -98,6 +98,16 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
         </div>
       )}
 
+      {/* Column headers */}
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100 bg-gray-50">
+        <span className="w-2 h-2 shrink-0" />
+        <span className="flex-1 min-w-0 text-xs font-medium text-gray-400 uppercase tracking-wide">{t.colName}</span>
+        <span className="hidden sm:block w-24 text-xs font-medium text-gray-400 uppercase tracking-wide text-center">{t.colRuns}</span>
+        <span className="hidden sm:block w-20 text-xs font-medium text-gray-400 uppercase tracking-wide text-center">{t.colMode}</span>
+        <span className="w-16 text-xs font-medium text-gray-400 uppercase tracking-wide text-center">{t.colStatus}</span>
+        <span className="w-24 text-xs font-medium text-gray-400 uppercase tracking-wide text-right">{t.colActions}</span>
+      </div>
+
       <ul className="divide-y divide-gray-100">
         {webhooks.map((webhook) => {
           const isEditing = expandedId === webhook.id;
@@ -130,40 +140,48 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
                 </div>
 
                 {/* Run counts — clickable to expand */}
-                {hasRuns && (
-                  <button
-                    type="button"
-                    onClick={() => toggleRuns(webhook.id)}
-                    className="hidden sm:flex items-center gap-1.5 shrink-0 rounded px-1 py-0.5 hover:bg-gray-100 transition-colors"
-                    title={t.showLastRuns}
-                  >
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-[#E1F5EE] text-[#085041]">
-                      ✓ {successCount}
-                    </span>
-                    {failCount > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-[#FCEBEB] text-[#791F1F]">
-                        ✕ {failCount}
+                <div className="hidden sm:flex items-center justify-center w-24 shrink-0">
+                  {hasRuns && (
+                    <button
+                      type="button"
+                      onClick={() => toggleRuns(webhook.id)}
+                      className="flex items-center gap-1.5 rounded px-1 py-0.5 hover:bg-gray-100 transition-colors"
+                      title={t.showLastRuns}
+                    >
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-[#E1F5EE] text-[#085041]">
+                        ✓ {successCount}
                       </span>
-                    )}
-                  </button>
-                )}
+                      
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-[#FCEBEB] text-[#791F1F]">
+                          ✕ {failCount}
+                        </span>
+                      
+                    </button>
+                  )}
+                </div>
 
-                {/* Badges */}
-                <span className="hidden sm:inline-flex px-2 py-0.5 text-xs font-medium rounded bg-[#EEEDFE] text-[#26215C]">
-                  {webhook.executionMode}
-                </span>
-                <span
-                  className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                    webhook.disabled
-                      ? "bg-[#FCEBEB] text-[#791F1F]"
-                      : "bg-[#E1F5EE] text-[#085041]"
-                  }`}
-                >
-                  {webhook.disabled ? t.statDisabled : t.statActive}
-                </span>
+                {/* Mode badge */}
+                <div className="hidden sm:flex items-center justify-center w-20 shrink-0">
+                  <span className="px-2 py-0.5 text-xs font-medium rounded bg-[#EEEDFE] text-[#26215C]">
+                    {webhook.executionMode}
+                  </span>
+                </div>
+
+                {/* Status badge */}
+                <div className="flex items-center justify-center w-16 shrink-0">
+                  <span
+                    className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                      webhook.disabled
+                        ? "bg-[#FCEBEB] text-[#791F1F]"
+                        : "bg-[#E1F5EE] text-[#085041]"
+                    }`}
+                  >
+                    {webhook.disabled ? t.statDisabled : t.statActive}
+                  </span>
+                </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center justify-end gap-1 w-24 shrink-0">
                   <IconButton
                     title={isEditing ? t.closeEdit : t.edit}
                     onClick={() => toggleEdit(webhook.id)}
