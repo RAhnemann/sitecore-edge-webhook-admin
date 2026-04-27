@@ -67,25 +67,7 @@ Before you can manage webhooks, you must establish a session. Click the **Settin
 
 Click **Connect** to exchange your credentials for a short-lived JWT. The credentials are discarded immediately after the token is received — only the JWT is retained (in `sessionStorage`).
 
-```
-┌─────────────────────────────────────────────────┐
-│  Settings                                        │
-│                                                  │
-│  ⚠ No active session. Enter your client ID       │
-│    and secret to fetch a JWT.                    │
-│                                                  │
-│  Edge Admin API base URL                         │
-│  [ https://edge.sitecorecloud.io/api/admin/v1 ]  │
-│                                                  │
-│  Client ID                                       │
-│  [ client_xxxxxxxxxxxxxxxxxxxxxxxx            ]  │
-│                                                  │
-│  Client secret                                   │
-│  [ ••••••••••••••••                          ]  │
-│                                                  │
-│  [ Clear session ]          [ Connect ]          │
-└─────────────────────────────────────────────────┘
-```
+![A picture of the Session Creation Screen](readme_assets/New_Session.png)
 
 Once connected:
 - The status pill in the header turns **green** (Session active)
@@ -102,20 +84,7 @@ To end your session manually, click **Clear session**. The JWT is also cleared a
 
 The main view lists all webhooks for your tenant with at-a-glance status information.
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  Total     Active    Disabled   Failed (recent)                      │
-│    12        9          2            1                               │
-├──────────────────────────────────────────────────────────────────────┤
-│  [ Search webhooks… ] [ All ] [ Active ] [ Disabled ]   [ Refresh ] │
-├──────────────────────────────────────────────────────────────────────┤
-│  ● NAME              RUNS     MODE     STATUS    ACTIONS             │
-│  ─────────────────────────────────────────────────────────────────   │
-│  ● Production CDN    ✓3 ✕0   OnEnd    Active    ✏ ⏸ 🗑              │
-│  ● Staging rebuild   ✓1 ✕2   OnEnd    Active    ✏ ⏸ 🗑              │
-│  ● Preview hook      ✓0 ✕0   OnUpdate Disabled  ✏ ▶ 🗑              │
-└──────────────────────────────────────────────────────────────────────┘
-```
+![List showing all webhooks](readme_assets/Webhook_List.png)
 
 **Status dot colours**
 
@@ -174,19 +143,7 @@ Only one webhook can be expanded for editing at a time. Opening a second row col
 
 Click the **pause icon** (active webhooks) or **play icon** (disabled webhooks) to toggle state. A confirmation dialog appears before any change is made.
 
-```
-┌──────────────────────────────────────┐
-│  Disable webhook                     │
-│                                      │
-│  Are you sure you want to disable    │
-│  "Production CDN"?                   │
-│                                      │
-│  The webhook will stop receiving     │
-│  publish notifications.              │
-│                                      │
-│        [ Cancel ]  [ Disable ]       │
-└──────────────────────────────────────┘
-```
+![Dialog box for disabling a webhook](readme_assets/Disable_webhook.png)
 
 ---
 
@@ -200,17 +157,8 @@ Click the **trash icon** on any row. A confirmation dialog warns that the action
 
 The **Execution log** tab provides a unified, chronological view of recent runs across **all** webhooks — useful for diagnosing failures without opening each webhook individually.
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Showing 18 entries                              [ Refresh ]     │
-├──────────────────────────────────────────────────────────────────┤
-│  RESULT   TIME                  WEBHOOK          MESSAGE         │
-│  ───────────────────────────────────────────────────────────     │
-│  ✓ OK     04/24/2026 09:12 AM   Production CDN   —              │
-│  ✕ Fail   04/24/2026 09:11 AM   Staging rebuild  HTTP 502       │
-│  ✓ OK     04/24/2026 08:58 AM   Staging rebuild  —              │
-└──────────────────────────────────────────────────────────────────┘
-```
+![List showing recent webhook exection](readme_assets/Execution_Log.png)
+
 
 - Entries are sorted **newest first**.
 - A maximum of **50 entries** are shown (limited to the `lastRuns` data returned by the API).
@@ -324,7 +272,6 @@ No `.env` file is required. The API base URL and OAuth endpoint are hardcoded co
 npm install        # Install dependencies
 npm run dev        # Start Next.js dev server (http://localhost:3000)
 npm run build      # Production build
-npm run lint       # ESLint
 ```
 
 ### Adding a translation
