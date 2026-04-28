@@ -74,34 +74,29 @@ export async function updateWebhook(id: string, data: WebhookEdit): Promise<Webh
   return handleResponse<Webhook>(res);
 }
 
-/** Re-enable a disabled webhook — sends PUT with disabled: false */
-export async function enableWebhook(webhook: Webhook): Promise<Webhook> {
-  return updateWebhook(webhook.id, {
+function togglePayload(webhook: Webhook, disabled: boolean): WebhookEdit {
+  const base = {
     label: webhook.label,
     uri: webhook.uri,
     method: webhook.method,
     headers: webhook.headers,
-    body: webhook.body,
-    bodyInclude: webhook.bodyInclude,
     createdBy: webhook.createdBy,
     executionMode: webhook.executionMode,
-    disabled: false,
-  });
+    disabled,
+  };
+  return webhook.executionMode === "OnUpdate"
+    ? { ...base, bodyInclude: webhook.bodyInclude }
+    : { ...base, body: webhook.body };
+}
+
+/** Re-enable a disabled webhook — sends PUT with disabled: false */
+export async function enableWebhook(webhook: Webhook): Promise<Webhook> {
+  return updateWebhook(webhook.id, togglePayload(webhook, false));
 }
 
 /** Disable an active webhook — sends PUT with disabled: true */
 export async function disableWebhook(webhook: Webhook): Promise<Webhook> {
-  return updateWebhook(webhook.id, {
-    label: webhook.label,
-    uri: webhook.uri,
-    method: webhook.method,
-    headers: webhook.headers,
-    body: webhook.body,
-    bodyInclude: webhook.bodyInclude,
-    createdBy: webhook.createdBy,
-    executionMode: webhook.executionMode,
-    disabled: true,
-  });
+  return updateWebhook(webhook.id, togglePayload(webhook, true));
 }
 
 /** Delete a webhook */

@@ -10,14 +10,18 @@ import { WebhookList } from "@/components/webhooks/WebhookList";
 import { WebhookForm } from "@/components/webhooks/WebhookForm";
 import { ExecutionLog } from "@/components/webhooks/ExecutionLog";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Webhook, WebhookEdit } from "@/types/webhook";
-
-type Tab = "webhooks" | "log" | "create" | "settings";
 
 export default function WebhookAdminPage() {
   const { currentUser, isInitialized } = useMarketplaceClient();
   const { t } = useTranslation();
-  const [tab, setTab] = useState<Tab>("webhooks");
+  const [tab, setTab] = useState("webhooks");
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -26,7 +30,6 @@ export default function WebhookAdminPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "disabled">("all");
 
-  // Sync connection state on mount
   useEffect(() => {
     setConnected(isConnected());
   }, []);
@@ -45,7 +48,6 @@ export default function WebhookAdminPage() {
     }
   }, [t.failedToLoad]);
 
-  // Fetch when connected and on the webhooks/log tab
   useEffect(() => {
     if (connected && (tab === "webhooks" || tab === "log")) {
       fetchWebhooks();
@@ -59,7 +61,7 @@ export default function WebhookAdminPage() {
       setTab("webhooks");
       await fetchWebhooks();
     } catch (err) {
-      throw err; // Let WebhookForm surface it
+      throw err;
     } finally {
       setCreating(false);
     }
@@ -67,7 +69,6 @@ export default function WebhookAdminPage() {
 
   const username = currentUser?.nickname ?? currentUser?.name ?? (isInitialized ? "unknown" : "loading…");
 
-  // Summary counts (always from full list)
   const total = webhooks.length;
   const active = webhooks.filter((w) => !w.disabled).length;
   const disabled = webhooks.filter((w) => w.disabled).length;
@@ -75,7 +76,6 @@ export default function WebhookAdminPage() {
     w.lastRuns?.some((r) => !r.success)
   ).length;
 
-  // Filtered + searched list for the table
   const visibleWebhooks = webhooks.filter((w) => {
     if (filter === "active" && w.disabled) return false;
     if (filter === "disabled" && !w.disabled) return false;
@@ -86,7 +86,9 @@ export default function WebhookAdminPage() {
     return true;
   });
 
-  const TAB_LABELS: Record<Tab, string> = {
+  const availableTabs = ["webhooks", "log", ...(connected ? ["create"] : []), "settings"];
+
+  const TAB_LABELS: Record<string, string> = {
     webhooks: t.tabWebhooks,
     log: t.tabLog,
     create: t.tabCreate,
@@ -94,167 +96,154 @@ export default function WebhookAdminPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-full text-sm font-sans max-w-[1280px] mx-auto w-full">
+    <div className="flex flex-col min-h-full font-sans max-w-[1280px] mx-auto w-full">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-[#EEEDFE] border-b border-gray-200">
-        <div className="flex items-center gap-2.5">
-         
-        </div>
+      <div className="flex items-center justify-between px-6 py-3 bg-primary-bg border-b border-border">
+        <div />
         <div className="flex items-center gap-2">
-          {/* Session status pill */}
-          <button
-            onClick={() => setTab("settings")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              connected
-                ? "bg-[#E1F5EE] border-[#1D9E75] text-[#085041]"
-                : "bg-[#FAEEDA] border-[#BA7517] text-[#633806]"
-            }`}
+          <Badge
+            asChild
+            colorScheme={connected ? "success" : "warning"}
+            className="cursor-pointer gap-1.5"
           >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                connected ? "bg-[#1D9E75]" : "bg-[#BA7517]"
-              }`}
-            />
-            {connected ? t.sessionActive : t.notConnected}
-          </button>
+            <button onClick={() => setTab("settings")} type="button">
+              <span className={`w-1.5 h-1.5 rounded-full ${connected ? "bg-success-500" : "bg-warning-500"}`} />
+              {connected ? t.sessionActive : t.notConnected}
+            </button>
+          </Badge>
           {connected && (
-            <button
-              onClick={() => setTab("create")}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#534AB7] text-white hover:bg-[#3C3489] transition-colors"
-            >
+            <Button size="sm" colorScheme="primary" onClick={() => setTab("create")}>
               <span className="text-base leading-none">+</span>
               {t.newWebhook}
-            </button>
+            </Button>
           )}
           <LanguageSwitcher />
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 bg-white px-6">
-        {(["webhooks", "log", ...(connected ? ["create"] : []), "settings"] as Tab[]).map((tabKey) => (
-          <button
-            key={tabKey}
-            onClick={() => setTab(tabKey)}
-            className={`px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
-              tab === tabKey
-                ? "border-[#534AB7] text-[#534AB7]"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            {TAB_LABELS[tabKey]}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 bg-white">
+      {/* Tabs + Content */}
+      <Tabs value={tab} onValueChange={setTab} className="flex flex-col flex-1 bg-background">
+        <TabsList className="justify-start rounded-none border-b border-border bg-background px-6 h-auto py-0">
+          {availableTabs.map((tabKey) => (
+            <TabsTrigger
+              key={tabKey}
+              value={tabKey}
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-xs font-medium text-muted-foreground data-[state=active]:text-primary"
+            >
+              {TAB_LABELS[tabKey]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
         {/* Webhooks tab */}
-        {tab === "webhooks" && (
-          <>
-            {/* Summary stats */}
-            <div className="grid grid-cols-4 gap-3 p-6 bg-gray-50 border-b border-gray-100">
-              {[
-                { label: t.statTotal,        value: total,       color: "text-gray-800" },
-                { label: t.statActive,       value: active,      color: "text-[#1D9E75]" },
-                { label: t.statDisabled,     value: disabled,    color: "text-[#E24B4A]" },
-                { label: t.statFailedRecent, value: recentFails, color: "text-[#BA7517]" },
-              ].map(({ label, value, color }) => (
-                <div
-                  key={label}
-                  className="bg-white rounded-lg border border-gray-100 px-4 py-3"
-                >
-                  <p className="text-xs text-gray-400">{label}</p>
-                  <p className={`text-2xl font-medium ${color}`}>{value}</p>
-                </div>
-              ))}
-            </div>
+        <TabsContent value="webhooks" className="mt-0 flex-1">
+          {/* Summary stats */}
+          <div className="grid grid-cols-4 gap-3 p-6 bg-muted border-b border-border">
+            {[
+              { label: t.statTotal,        value: total,       colorScheme: "neutral" as const },
+              { label: t.statActive,       value: active,      colorScheme: "success" as const },
+              { label: t.statDisabled,     value: disabled,    colorScheme: "danger" as const },
+              { label: t.statFailedRecent, value: recentFails, colorScheme: "warning" as const },
+            ].map(({ label, value, colorScheme }) => (
+              <Card key={label} style="outline" padding="md">
+                <CardContent className="p-0">
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <Badge colorScheme={colorScheme} size="lg" className="mt-1 text-xl font-medium h-auto py-0.5 px-0 bg-transparent">
+                    {value}
+                  </Badge>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-            {/* Filter toolbar */}
-            <div className="flex items-center gap-2 px-6 py-3 border-b border-gray-100">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t.searchWebhooks}
-                className="flex-1 max-w-xs px-3 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#7F77DD]"
-              />
-              <button
-                onClick={() => setFilter("all")}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filter === "all" ? "bg-gray-100 border-gray-400 text-gray-800" : "border-gray-200 hover:bg-gray-50"}`}
-              >{t.filterAll}</button>
-              <button
-                onClick={() => setFilter("active")}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filter === "active" ? "bg-[#C2EDD9] border-[#1D9E75] text-[#085041]" : "border-[#1D9E75] text-[#1D9E75] hover:bg-[#E1F5EE]"}`}
-              >{t.filterActive}</button>
-              <button
-                onClick={() => setFilter("disabled")}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${filter === "disabled" ? "bg-[#F5C0C0] border-[#E24B4A] text-[#791F1F]" : "border-[#E24B4A] text-[#E24B4A] hover:bg-[#FCEBEB]"}`}
-              >{t.filterDisabled}</button>
-              <button
-                onClick={fetchWebhooks}
-                disabled={loading}
-                className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                <RefreshIcon spinning={loading} />
-                {t.refresh}
-              </button>
-            </div>
+          {/* Filter toolbar */}
+          <div className="flex items-center gap-2 px-6 py-3 border-b border-border">
+            <Input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t.searchWebhooks}
+              className="flex-1 max-w-xs h-8 text-xs"
+            />
+            <Button
+              size="xs"
+              variant={filter === "all" ? "default" : "outline"}
+              colorScheme={filter === "all" ? "neutral" : "neutral"}
+              onClick={() => setFilter("all")}
+            >{t.filterAll}</Button>
+            <Button
+              size="xs"
+              variant={filter === "active" ? "default" : "outline"}
+              colorScheme="success"
+              onClick={() => setFilter("active")}
+            >{t.filterActive}</Button>
+            <Button
+              size="xs"
+              variant={filter === "disabled" ? "default" : "outline"}
+              colorScheme="danger"
+              onClick={() => setFilter("disabled")}
+            >{t.filterDisabled}</Button>
+            <Button
+              size="xs"
+              variant="outline"
+              colorScheme="neutral"
+              onClick={fetchWebhooks}
+              disabled={loading}
+              className="ml-auto"
+            >
+              <RefreshIcon spinning={loading} />
+              {t.refresh}
+            </Button>
+          </div>
 
-            {loading && (
-              <div className="py-12 text-center text-xs text-gray-400">{t.loadingWebhooks}</div>
-            )}
-            {fetchError && (
-              <div className="m-6 px-4 py-3 text-xs text-[#791F1F] bg-[#FCEBEB] border border-[#E24B4A] rounded-lg">
-                {fetchError}
-              </div>
-            )}
-            {!loading && !fetchError && (
-              <WebhookList
-                webhooks={visibleWebhooks}
-                currentUser={username}
-                onRefresh={fetchWebhooks}
-              />
-            )}
-          </>
-        )}
+          {loading && (
+            <div className="py-12 text-center text-xs text-muted-foreground">{t.loadingWebhooks}</div>
+          )}
+          {fetchError && (
+            <Alert variant="danger" className="m-6">
+              <AlertDescription>{fetchError}</AlertDescription>
+            </Alert>
+          )}
+          {!loading && !fetchError && (
+            <WebhookList
+              webhooks={visibleWebhooks}
+              currentUser={username}
+              onRefresh={fetchWebhooks}
+            />
+          )}
+        </TabsContent>
 
         {/* Execution log tab */}
-        {tab === "log" && (
+        <TabsContent value="log" className="mt-0 flex-1">
           <ExecutionLog webhooks={webhooks} onRefresh={fetchWebhooks} loading={loading} />
-        )}
+        </TabsContent>
 
         {/* Create tab */}
-        {tab === "create" && (
-          <div className="p-6 max-w-2xl">
-            <WebhookForm
-              currentUser={username}
-              onSubmit={handleCreate}
-              onCancel={() => setTab("webhooks")}
-              isSubmitting={creating}
-            />
-          </div>
-        )}
+        <TabsContent value="create" className="mt-0 p-6 max-w-2xl">
+          <WebhookForm
+            currentUser={username}
+            onSubmit={handleCreate}
+            onCancel={() => setTab("webhooks")}
+            isSubmitting={creating}
+          />
+        </TabsContent>
 
         {/* Settings tab */}
-        {tab === "settings" && (
-          <div className="max-w-2xl">
-            <SettingsPanel
-              onConnected={() => {
-                setConnected(true);
-                setTab("webhooks");
-              }}
-              onDisconnected={() => {
-                setConnected(false);
-                setWebhooks([]);
-                setTab((prev) => (prev === "create" ? "webhooks" : prev));
-              }}
-            />
-          </div>
-        )}
-      </div>
+        <TabsContent value="settings" className="mt-0 max-w-2xl">
+          <SettingsPanel
+            onConnected={() => {
+              setConnected(true);
+              setTab("webhooks");
+            }}
+            onDisconnected={() => {
+              setConnected(false);
+              setWebhooks([]);
+              setTab((prev) => (prev === "create" ? "webhooks" : prev));
+            }}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -267,15 +256,6 @@ function RefreshIcon({ spinning }: { spinning: boolean }) {
     >
       <path d="M10 6A4 4 0 112 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
       <path d="M10 3v3h-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function WebhookIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
-      <circle cx="6" cy="6" r="2.5" fill="white" />
-      <path d="M6 1v2M6 9v2M1 6h2M9 6h2" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }

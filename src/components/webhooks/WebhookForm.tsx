@@ -3,11 +3,20 @@
 import { useState, useEffect, useId, Children, isValidElement, cloneElement, type ReactNode, type ReactElement, type HTMLAttributes } from "react";
 import type { Webhook, WebhookEdit, ExecutionMode, HttpMethod } from "@/types/webhook";
 import { useTranslation } from "@/context/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface WebhookFormProps {
-  /** Pre-populated when editing; undefined for create */
   initial?: Webhook;
-  /** Username resolved from host.user — read-only, injected by the SDK */
   currentUser: string;
   onSubmit: (data: WebhookEdit) => Promise<void>;
   onCancel: () => void;
@@ -37,14 +46,12 @@ export function WebhookForm({
   const [headerVal, setHeaderVal] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Keep createdBy in sync with the resolved user for new webhooks
   useEffect(() => {
     if (!initial) {
       setForm((prev) => ({ ...prev, createdBy: currentUser }));
     }
   }, [currentUser, initial]);
 
-  // Populate form when editing
   useEffect(() => {
     if (initial) {
       setForm({
@@ -101,7 +108,6 @@ export function WebhookForm({
       executionMode: form.executionMode,
       headers: form.headers,
       createdBy: form.createdBy,
-      // Only include the body field relevant to the chosen mode
       ...(form.executionMode === "OnEnd"
         ? { body: form.body }
         : { bodyInclude: form.bodyInclude }),
@@ -114,178 +120,176 @@ export function WebhookForm({
   return (
     <form onSubmit={handleSubmit} noValidate aria-busy={isSubmitting} className="space-y-3">
       {/* Basic details */}
-      <div role="group" aria-labelledby="section-basic" className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-3">
-        <p id="section-basic" className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t.basicDetails}</p>
+      <section aria-labelledby="section-basic" className="p-3 rounded-lg border border-border bg-muted space-y-3">
+        <p id="section-basic" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t.basicDetails}</p>
 
         <Field label={t.labelField} error={errors.label}>
-          <input
+          <Input
             type="text"
             value={form.label}
             onChange={(e) => set("label", e.target.value)}
             placeholder="e.g. Production rebuild"
-            className={input(errors.label)}
+            aria-invalid={!!errors.label}
+            className="h-8 text-sm"
           />
         </Field>
 
         <div className="grid grid-cols-2 gap-2">
           <Field label={t.uri} error={errors.uri}>
-            <input
+            <Input
               type="text"
               value={form.uri}
               onChange={(e) => set("uri", e.target.value)}
               placeholder="https://..."
-              className={input(errors.uri)}
+              aria-invalid={!!errors.uri}
+              className="h-8 text-sm"
             />
           </Field>
           <Field label={t.httpMethod}>
-            <select
-              value={form.method}
-              onChange={(e) => set("method", e.target.value as HttpMethod)}
-              className={input()}
-            >
-              <option>POST</option>
-              <option>GET</option>
-            </select>
+            <Select value={form.method} onValueChange={(v) => set("method", v as HttpMethod)}>
+              <SelectTrigger size="sm" className="h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="POST">POST</SelectItem>
+                <SelectItem value="GET">GET</SelectItem>
+              </SelectContent>
+            </Select>
           </Field>
         </div>
-      </div>
+      </section>
 
       {/* Execution */}
-      <div role="group" aria-labelledby="section-execution" className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-3">
-        <p id="section-execution" className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t.execution}</p>
+      <section aria-labelledby="section-execution" className="p-3 rounded-lg border border-border bg-muted space-y-3">
+        <p id="section-execution" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t.execution}</p>
 
         <div className="grid grid-cols-2 gap-2">
           <Field label={t.executionMode}>
-            <select
-              value={form.executionMode}
-              onChange={(e) => set("executionMode", e.target.value as ExecutionMode)}
-              className={input()}
-            >
-              <option value="OnEnd">OnEnd</option>
-              <option value="OnUpdate">OnUpdate</option>
-            </select>
+            <Select value={form.executionMode} onValueChange={(v) => set("executionMode", v as ExecutionMode)}>
+              <SelectTrigger size="sm" className="h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="OnEnd">OnEnd</SelectItem>
+                <SelectItem value="OnUpdate">OnUpdate</SelectItem>
+              </SelectContent>
+            </Select>
           </Field>
 
           <Field label={t.createdBy}>
-            <input
+            <Input
               type="text"
               value={form.createdBy || "—"}
               disabled
-              className={input() + " text-gray-400 cursor-not-allowed"}
+              className="h-8 text-sm opacity-60 cursor-not-allowed"
             />
           </Field>
         </div>
 
-        {/* Body — label changes based on mode */}
         {form.executionMode === "OnEnd" ? (
           <Field label={t.bodyJson} error={errors.body}>
-            <textarea
-              rows={2}
+            <Textarea
               value={form.body}
               onChange={(e) => set("body", e.target.value)}
               placeholder='{"rebuild": "true"}'
-              className={input(errors.body) + " resize-none"}
+              aria-invalid={!!errors.body}
+              className="min-h-0 h-16 text-sm resize-none"
             />
           </Field>
         ) : (
           <Field label={t.bodyIncludeField} error={errors.bodyInclude}>
-            <textarea
-              rows={2}
+            <Textarea
               value={form.bodyInclude}
               onChange={(e) => set("bodyInclude", e.target.value)}
               placeholder='{"key": "value"}'
-              className={input(errors.bodyInclude) + " resize-none"}
+              aria-invalid={!!errors.bodyInclude}
+              className="min-h-0 h-16 text-sm resize-none"
             />
-            <p className="text-xs text-gray-500 mt-1">{t.bodyIncludeHint}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t.bodyIncludeHint}</p>
           </Field>
         )}
-      </div>
+      </section>
 
       {/* Custom headers */}
-      <div role="group" aria-labelledby="section-headers" className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-2">
-        <p id="section-headers" className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t.customHeaders}</p>
+      <section aria-labelledby="section-headers" className="p-3 rounded-lg border border-border bg-muted space-y-2">
+        <p id="section-headers" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t.customHeaders}</p>
 
-        {/* Existing headers */}
         {Object.entries(form.headers ?? {}).map(([k, v]) => (
           <div key={k} className="flex items-center gap-2 text-xs">
-            <code className="flex-1 px-2 py-1 bg-white border border-gray-100 rounded font-mono truncate">
+            <code className="flex-1 px-2 py-1 bg-background border border-border rounded font-mono truncate">
               {k}: {v}
             </code>
-            <button
+            <Button
               type="button"
+              size="icon-xs"
+              variant="ghost"
+              colorScheme="danger"
               onClick={() => removeHeader(k)}
-              className="text-gray-400 hover:text-[#E24B4A] transition-colors"
               aria-label={`Remove header ${k}`}
             >
-              <span aria-hidden="true">✕</span>
-            </button>
+              ✕
+            </Button>
           </div>
         ))}
 
-        {/* Add header row */}
         <div className="flex gap-2">
-          <input
+          <Input
             type="text"
             value={headerKey}
             onChange={(e) => setHeaderKey(e.target.value)}
             placeholder="x-api-key"
             aria-label={t.headerName}
-            className={input() + " flex-1"}
+            className="flex-1 h-8 text-sm"
           />
-          <input
+          <Input
             type="text"
             value={headerVal}
             onChange={(e) => setHeaderVal(e.target.value)}
             placeholder="value"
             aria-label={t.headerValue}
-            className={input() + " flex-1"}
+            className="flex-1 h-8 text-sm"
           />
-          <button
+          <Button
             type="button"
+            size="sm"
+            variant="outline"
+            colorScheme="neutral"
             onClick={addHeader}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
           >
             {t.addHeader}
-          </button>
+          </Button>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
-      <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-        <button
+      <div className="flex justify-end gap-2 pt-2 border-t border-border">
+        <Button
           type="button"
+          size="sm"
+          variant="outline"
+          colorScheme="neutral"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
         >
           {t.cancel}
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
+          size="sm"
+          colorScheme="primary"
           disabled={isSubmitting}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#534AB7] text-white hover:bg-[#3C3489] disabled:opacity-50 transition-colors"
         >
           {isSubmitting && (
             <span aria-hidden="true" className="inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
           )}
           {isEdit ? t.saveChanges : t.createWebhook}
           {isSubmitting && <span className="sr-only">{t.saving}</span>}
-        </button>
+        </Button>
       </div>
     </form>
   );
 }
 
-// Helper: Tailwind class string for inputs
-function input(error?: string) {
-  return [
-    "w-full px-2.5 py-1.5 text-sm rounded-lg border bg-white",
-    "focus:outline-none focus:ring-2 focus:ring-[#534AB7] focus:border-[#7F77DD]",
-    error ? "border-[#E24B4A]" : "border-gray-200",
-  ].join(" ");
-}
-
-// Helper: labelled field wrapper — auto-wires htmlFor/id, aria-describedby, and aria-invalid
 function Field({
   label,
   error,
@@ -298,7 +302,6 @@ function Field({
   const id = useId();
   const errorId = `${id}-error`;
 
-  // Clone only the first child element to inject id + ARIA props
   const enhanced = Children.map(children, (child, i) => {
     if (i === 0 && isValidElement(child)) {
       return cloneElement(child as ReactElement<HTMLAttributes<HTMLElement>>, {
@@ -311,9 +314,9 @@ function Field({
 
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="text-xs font-medium text-gray-600">{label}</label>
+      <Label htmlFor={id} className="text-xs font-medium text-muted-foreground">{label}</Label>
       {enhanced}
-      {error && <p id={errorId} role="alert" className="text-xs text-[#E24B4A]">{error}</p>}
+      {error && <p id={errorId} role="alert" className="text-xs text-danger-fg">{error}</p>}
     </div>
   );
 }
