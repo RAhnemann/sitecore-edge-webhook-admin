@@ -3,7 +3,7 @@
 import { useState, Fragment } from "react";
 import type { Webhook, WebhookEdit, TestWebhookResult } from "@/types/webhook";
 import { WebhookForm } from "./WebhookForm";
-import { updateWebhook, enableWebhook, disableWebhook, deleteWebhook, testWebhook, getWebhook } from "@/lib/api";
+import { updateWebhook, enableWebhook, disableWebhook, deleteWebhook, testWebhook, getWebhook, SessionExpiredError } from "@/lib/api";
 import { useTranslation } from "@/context/LanguageContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,12 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
     setRunsId((prev) => (prev === id ? null : id));
   }
 
+  /** Friendly message for an error — session expiry gets the reconnect hint. */
+  function describeError(err: unknown, fallback: string): string {
+    if (err instanceof SessionExpiredError) return t.sessionExpired;
+    return err instanceof Error ? err.message : fallback;
+  }
+
   function closeEditForm() {
     setExpandedId(null);
     setEditWebhook(null);
@@ -64,13 +70,19 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
     setError(null);
   }
 
+  /** If the edit form is dirty, open the discard prompt and return true (intercepted). */
+  function guardClose(): boolean {
+    if (editIsDirty) { setDiscardPending(true); return true; }
+    return false;
+  }
+
   async function toggleEdit(id: string) {
     if (expandedId === id) {
-      if (editIsDirty) { setDiscardPending(true); return; }
+      if (guardClose()) return;
       closeEditForm();
       return;
     }
-    if (editIsDirty) { setDiscardPending(true); return; }
+    if (guardClose()) return;
     setError(null);
     setExpandedId(id);
     setEditWebhook(null);
@@ -80,7 +92,7 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
       const full = await getWebhook(id);
       setEditWebhook(full);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load webhook.");
+      setError(describeError(err, "Failed to load webhook."));
       setExpandedId(null);
     } finally {
       setEditLoading(false);
@@ -95,7 +107,7 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
       closeEditForm();
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Update failed.");
+      setError(describeError(err, "Update failed."));
     } finally {
       setSubmitting(false);
     }
@@ -114,7 +126,7 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
       setConfirmToggle(null);
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update webhook.");
+      setError(describeError(err, "Could not update webhook."));
       setConfirmToggle(null);
     } finally {
       setToggling(false);
@@ -130,7 +142,7 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
       setConfirmDelete(null);
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed.");
+      setError(describeError(err, "Delete failed."));
       setConfirmDelete(null);
     } finally {
       setDeleting(false);
@@ -184,7 +196,7 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
       setTestTarget(full);
       setTestBody(buildTestBody(full, extra));
     } catch (err) {
-      setTestError(err instanceof Error ? err.message : "Failed to load webhook details.");
+      setTestError(describeError(err, "Failed to load webhook details."));
       // testTarget and testBody already have usable list-webhook values
     } finally {
       setTestLoading(false);
@@ -351,7 +363,7 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
                           initial={editWebhook}
                           currentUser={currentUser}
                           onSubmit={(data) => handleUpdate(editWebhook, data)}
-                          onCancel={() => { if (editIsDirty) { setDiscardPending(true); } else { closeEditForm(); } }}
+                          onCancel={() => { if (!guardClose()) closeEditForm(); }}
                           onDirtyChange={setEditIsDirty}
                           isSubmitting={submitting}
                         />
@@ -424,9 +436,6 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
               </DialogHeader>
 
               <div className="space-y-3 overflow-y-auto min-h-0 flex-1">
-                {testLoading ? (
-                  <p className="text-sm text-center text-muted-foreground py-4">{t.loadingWebhooks}</p>
-                ) : (
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
                     {t.requestPreview}
@@ -460,7 +469,6 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
                     <p className="text-xs text-muted-foreground italic">{t.testNoBody}</p>
                   )}
                 </div>
-                )}
 
                 {testError && (
                   <Alert variant="danger">
@@ -468,27 +476,28 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
                   </Alert>
                 )}
 
-                {testResult && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                      {t.testResponse}
-                    </p>
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge
-                        colorScheme={testResult.status >= 200 && testResult.status < 300 ? "success" : "danger"}
-                        size="sm"
-                      >
-                        {testResult.status || "—"} {testResult.statusText}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{testResult.durationMs}ms</span>
+                {testResult && (() => {
+                  const ok = testResult.status >= 200 && testResult.status < 300;
+                  const content = ok ? testResult.body : extractMessage(testResult.body);
+                  return (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                        {t.testResponse}
+                      </p>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Badge colorScheme={ok ? "success" : "danger"} size="sm">
+                          {testResult.status || "—"} {testResult.statusText}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{testResult.durationMs}ms</span>
+                      </div>
+                      {content && (
+                        <pre className="text-xs bg-muted p-2 rounded border border-border overflow-auto max-h-32 font-mono whitespace-pre-wrap break-all">
+                          {content}
+                        </pre>
+                      )}
                     </div>
-                    {testResult.body && (
-                      <pre className="text-xs bg-muted p-2 rounded border border-border overflow-auto max-h-32 font-mono whitespace-pre-wrap break-all">
-                        {testResult.body}
-                      </pre>
-                    )}
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               <DialogFooter>
@@ -576,6 +585,19 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
       </Dialog>
     </div>
   );
+}
+
+/** Pull the error message out of a JSON error body; fall back to the raw body. */
+function extractMessage(body: string): string {
+  try {
+    const parsed = JSON.parse(body);
+    // Handles { error: { message } } and top-level { message }
+    const message = parsed?.error?.message ?? parsed?.message;
+    if (typeof message === "string" && message) return message;
+  } catch {
+    /* not JSON — show as-is */
+  }
+  return body;
 }
 
 function formatTimestamp(ts: string, locale: string, hour12: boolean): string {

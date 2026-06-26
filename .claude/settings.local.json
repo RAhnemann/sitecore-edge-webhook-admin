@@ -17,7 +17,8 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(gh pr create --title 'Adopt Sitecore Blok design system' --body ' *)",
-      "PowerShell(where.exe gh 2>$null; \\(Get-Command gh -ErrorAction SilentlyContinue\\).Source)"
+      "PowerShell(where.exe gh 2>$null; \\(Get-Command gh -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(npm run build 2>&1)"
     ]
   }
 }

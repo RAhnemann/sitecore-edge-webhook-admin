@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import {
   saveConnectionSettings,
   loadConnectionSettings,
@@ -34,7 +34,8 @@ export function SettingsPanel({ onConnected, onDisconnected }: SettingsPanelProp
     if (saved) setIsConnected(true);
   }, []);
 
-  async function handleConnect() {
+  async function handleConnect(e: FormEvent) {
+    e.preventDefault();
     setError(null);
     if (!clientId.trim()) { setError(t.errorClientIdRequired); return; }
     if (!clientSecret.trim()) { setError(t.errorClientSecretRequired); return; }
@@ -72,7 +73,7 @@ export function SettingsPanel({ onConnected, onDisconnected }: SettingsPanelProp
   }
 
   return (
-    <div className="p-6 space-y-5">
+    <form onSubmit={handleConnect} className="p-6 space-y-5">
       {/* Session notice */}
       <Alert variant={isConnected ? "success" : "warning"}>
         <AlertDescription>
@@ -149,10 +150,9 @@ export function SettingsPanel({ onConnected, onDisconnected }: SettingsPanelProp
           {t.clearSession}
         </Button>
         <Button
-          type="button"
+          type="submit"
           size="sm"
           colorScheme="primary"
-          onClick={handleConnect}
           disabled={connecting}
         >
           {connecting && (
@@ -161,7 +161,7 @@ export function SettingsPanel({ onConnected, onDisconnected }: SettingsPanelProp
           {connecting ? t.connecting : t.saveAndConnect}
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
 

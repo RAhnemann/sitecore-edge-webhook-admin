@@ -11,9 +11,17 @@
 import { loadConnectionSettings } from "@/lib/session";
 import type { Webhook, WebhookEdit, TestWebhookResult } from "@/types/webhook";
 
+/** Thrown when the API rejects the token (401/403) — the session has expired or lost access. */
+export class SessionExpiredError extends Error {
+  constructor() {
+    super("Session expired");
+    this.name = "SessionExpiredError";
+  }
+}
+
 function getSettings() {
   const settings = loadConnectionSettings();
-  if (!settings) throw new Error("No active session. Please configure your connection settings.");
+  if (!settings) throw new SessionExpiredError();
   return settings;
 }
 
@@ -26,6 +34,7 @@ function headers(token: string): HeadersInit {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) throw new SessionExpiredError();
     const text = await res.text().catch(() => res.statusText);
     throw new Error(`API error ${res.status}: ${text}`);
   }

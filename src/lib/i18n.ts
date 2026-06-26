@@ -116,6 +116,13 @@ export interface Translations {
   testSending: string;
   testResponse: string;
   testNoBody: string;
+  // Connection-aware empty states
+  connectPrompt: string;
+  goToSettings: string;
+  noWebhooksYet: string;
+  noWebhooksMatch: string;
+  clearFilters: string;
+  sessionExpired: string;
 }
 
 export interface LanguageMeta {
@@ -154,7 +161,7 @@ export function detectLanguage(): Lang {
 
 export const translations: Record<Lang, Translations> = {
   enUS: {
-    webhookManager: "Webhook manager",
+    webhookManager: "Webhook Manager",
     sessionActive: "Session active",
     notConnected: "Not connected",
     newWebhook: "New webhook",
@@ -251,6 +258,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "Sending…",
     testResponse: "Response",
     testNoBody: "(no body)",
+    connectPrompt: "Connect your Sitecore account to manage webhooks.",
+    goToSettings: "Go to Settings",
+    noWebhooksYet: "No webhooks yet. Create your first one to get started.",
+    noWebhooksMatch: "No webhooks match your search or filters.",
+    clearFilters: "Clear filters",
+    sessionExpired: "Your session has expired. Please reconnect in Settings.",
   },
 
   en: {
@@ -351,6 +364,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "Sending…",
     testResponse: "Response",
     testNoBody: "(no body)",
+    connectPrompt: "Connect your Sitecore account to manage webhooks.",
+    goToSettings: "Go to Settings",
+    noWebhooksYet: "No webhooks yet. Create your first one to get started.",
+    noWebhooksMatch: "No webhooks match your search or filters.",
+    clearFilters: "Clear filters",
+    sessionExpired: "Your session has expired. Please reconnect in Settings.",
   },
 
   zh: {
@@ -451,6 +470,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "发送中…",
     testResponse: "响应",
     testNoBody: "（无请求体）",
+    connectPrompt: "连接您的 Sitecore 账户以管理 Webhooks。",
+    goToSettings: "前往设置",
+    noWebhooksYet: "还没有 Webhook。创建第一个以开始使用。",
+    noWebhooksMatch: "没有符合搜索或筛选条件的 Webhook。",
+    clearFilters: "清除筛选",
+    sessionExpired: "您的会话已过期。请在设置中重新连接。",
   },
 
   es: {
@@ -551,6 +576,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "Enviando…",
     testResponse: "Respuesta",
     testNoBody: "(sin cuerpo)",
+    connectPrompt: "Conecta tu cuenta de Sitecore para gestionar webhooks.",
+    goToSettings: "Ir a Configuración",
+    noWebhooksYet: "Aún no hay webhooks. Crea el primero para empezar.",
+    noWebhooksMatch: "Ningún webhook coincide con tu búsqueda o filtros.",
+    clearFilters: "Borrar filtros",
+    sessionExpired: "Tu sesión ha expirado. Vuelve a conectarte en Configuración.",
   },
 
   hi: {
@@ -651,6 +682,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "भेजा जा रहा है…",
     testResponse: "प्रतिक्रिया",
     testNoBody: "(कोई बॉडी नहीं)",
+    connectPrompt: "Webhooks प्रबंधित करने के लिए अपना Sitecore खाता कनेक्ट करें।",
+    goToSettings: "सेटिंग्स पर जाएं",
+    noWebhooksYet: "अभी तक कोई Webhook नहीं। शुरू करने के लिए पहला बनाएं।",
+    noWebhooksMatch: "आपकी खोज या फ़िल्टर से कोई Webhook मेल नहीं खाता।",
+    clearFilters: "फ़िल्टर साफ़ करें",
+    sessionExpired: "आपका सत्र समाप्त हो गया है। कृपया सेटिंग्स में पुनः कनेक्ट करें।",
   },
 
   ar: {
@@ -751,6 +788,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "جارٍ الإرسال…",
     testResponse: "الاستجابة",
     testNoBody: "(بدون جسم)",
+    connectPrompt: "اربط حساب Sitecore الخاص بك لإدارة Webhooks.",
+    goToSettings: "الذهاب إلى الإعدادات",
+    noWebhooksYet: "لا توجد Webhooks بعد. أنشئ أول واحد للبدء.",
+    noWebhooksMatch: "لا يوجد Webhook يطابق بحثك أو عوامل التصفية.",
+    clearFilters: "مسح عوامل التصفية",
+    sessionExpired: "انتهت صلاحية جلستك. يرجى إعادة الاتصال في الإعدادات.",
   },
 
   fr: {
@@ -851,6 +894,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "Envoi…",
     testResponse: "Réponse",
     testNoBody: "(aucun corps)",
+    connectPrompt: "Connectez votre compte Sitecore pour gérer les webhooks.",
+    goToSettings: "Aller aux paramètres",
+    noWebhooksYet: "Aucun webhook pour l'instant. Créez-en un pour commencer.",
+    noWebhooksMatch: "Aucun webhook ne correspond à votre recherche ou vos filtres.",
+    clearFilters: "Effacer les filtres",
+    sessionExpired: "Votre session a expiré. Veuillez vous reconnecter dans les paramètres.",
   },
 
   pt: {
@@ -951,6 +1000,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "Enviando…",
     testResponse: "Resposta",
     testNoBody: "(sem corpo)",
+    connectPrompt: "Conecte sua conta Sitecore para gerenciar webhooks.",
+    goToSettings: "Ir para Configurações",
+    noWebhooksYet: "Ainda não há webhooks. Crie o primeiro para começar.",
+    noWebhooksMatch: "Nenhum webhook corresponde à sua pesquisa ou filtros.",
+    clearFilters: "Limpar filtros",
+    sessionExpired: "Sua sessão expirou. Reconecte-se nas Configurações.",
   },
 
   bn: {
@@ -1051,6 +1106,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "পাঠানো হচ্ছে…",
     testResponse: "প্রতিক্রিয়া",
     testNoBody: "(কোনো বডি নেই)",
+    connectPrompt: "Webhooks পরিচালনা করতে আপনার Sitecore অ্যাকাউন্ট সংযুক্ত করুন।",
+    goToSettings: "সেটিংসে যান",
+    noWebhooksYet: "এখনো কোনো Webhook নেই। শুরু করতে প্রথমটি তৈরি করুন।",
+    noWebhooksMatch: "আপনার অনুসন্ধান বা ফিল্টারের সাথে কোনো Webhook মেলে না।",
+    clearFilters: "ফিল্টার সাফ করুন",
+    sessionExpired: "আপনার সেশনের মেয়াদ শেষ হয়েছে। অনুগ্রহ করে সেটিংসে পুনরায় সংযুক্ত হন।",
   },
 
   ru: {
@@ -1151,6 +1212,12 @@ export const translations: Record<Lang, Translations> = {
     testSending: "Отправка…",
     testResponse: "Ответ",
     testNoBody: "(тело отсутствует)",
+    connectPrompt: "Подключите аккаунт Sitecore для управления вебхуками.",
+    goToSettings: "Перейти к настройкам",
+    noWebhooksYet: "Вебхуков пока нет. Создайте первый, чтобы начать.",
+    noWebhooksMatch: "Нет вебхуков, соответствующих поиску или фильтрам.",
+    clearFilters: "Очистить фильтры",
+    sessionExpired: "Срок действия сессии истёк. Переподключитесь в настройках.",
   },
 
   ja: {
@@ -1251,5 +1318,11 @@ export const translations: Record<Lang, Translations> = {
     testSending: "送信中…",
     testResponse: "レスポンス",
     testNoBody: "(ボディなし)",
+    connectPrompt: "Webhookを管理するにはSitecoreアカウントを接続してください。",
+    goToSettings: "設定へ移動",
+    noWebhooksYet: "Webhookはまだありません。最初の一つを作成してください。",
+    noWebhooksMatch: "検索またはフィルターに一致するWebhookがありません。",
+    clearFilters: "フィルターをクリア",
+    sessionExpired: "セッションの有効期限が切れました。設定で再接続してください。",
   },
 };

@@ -34,7 +34,7 @@ export function WebhookForm({
 }: WebhookFormProps) {
   const { t } = useTranslation();
 
-  const [form, setForm] = useState<Omit<WebhookEdit, never>>(() =>
+  const [form, setForm] = useState<WebhookEdit>(() =>
     initial
       ? {
           label: initial.label,
@@ -42,11 +42,7 @@ export function WebhookForm({
           method: initial.method,
           executionMode: initial.executionMode,
           body: initial.body ?? "",
-          bodyInclude: typeof initial.bodyInclude === "string"
-            ? initial.bodyInclude
-            : initial.bodyInclude != null
-            ? JSON.stringify(initial.bodyInclude, null, 2)
-            : "",
+          bodyInclude: toJsonString(initial.bodyInclude),
           headers: initial.headers ?? {},
           createdBy: initial.createdBy,
         }
@@ -138,9 +134,9 @@ export function WebhookForm({
       executionMode: form.executionMode,
       headers: form.headers,
       createdBy: form.createdBy,
-      ...(form.executionMode === "OnEnd" && form.method === "POST"
+      ...(bodyMode === "body"
         ? { body: form.body }
-        : form.executionMode === "OnUpdate" && form.bodyInclude
+        : bodyMode === "bodyInclude" && form.bodyInclude
         ? { bodyInclude: form.bodyInclude }
         : {}),
     };
@@ -148,6 +144,15 @@ export function WebhookForm({
   }
 
   const isEdit = !!initial;
+
+  // Which body field applies: OnEnd+POST takes a raw body, OnUpdate takes a
+  // bodyInclude fragment, everything else (e.g. OnEnd+GET) takes neither.
+  const bodyMode: "body" | "bodyInclude" | "none" =
+    form.executionMode === "OnEnd" && form.method === "POST"
+      ? "body"
+      : form.executionMode === "OnUpdate"
+      ? "bodyInclude"
+      : "none";
 
   return (
     <form onSubmit={handleSubmit} noValidate aria-busy={isSubmitting} className="space-y-3">
@@ -225,7 +230,7 @@ export function WebhookForm({
           </Field>
         </div>
 
-        {form.executionMode === "OnEnd" && form.method === "POST" ? (
+        {bodyMode === "body" ? (
           <Field label={t.bodyJson} error={errors.body}>
             <Textarea
               value={form.body}
@@ -235,7 +240,7 @@ export function WebhookForm({
               className="min-h-0 h-16 text-sm resize-none"
             />
           </Field>
-        ) : form.executionMode === "OnUpdate" ? (
+        ) : bodyMode === "bodyInclude" ? (
           <Field label={t.bodyIncludeField} error={errors.bodyInclude}>
             <Textarea
               value={form.bodyInclude}
@@ -266,7 +271,7 @@ export function WebhookForm({
               onClick={() => startEditHeader(k, v)}
               aria-label={`Edit header ${k}`}
             >
-              ✎
+              <PencilIcon />
             </Button>
             <Button
               type="button"
@@ -276,7 +281,7 @@ export function WebhookForm({
               onClick={() => removeHeader(k)}
               aria-label={`Remove header ${k}`}
             >
-              ✕
+              <CloseIcon />
             </Button>
           </div>
         ))}
@@ -347,6 +352,29 @@ export function WebhookForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+/** Normalize a bodyInclude value (string or parsed object) to an editable JSON string. */
+function toJsonString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value != null) return JSON.stringify(value, null, 2);
+  return "";
+}
+
+function PencilIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+      <path d="M8.5 1.5l2 2-7 7H1.5v-2l7-7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+      <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
   );
 }
 
