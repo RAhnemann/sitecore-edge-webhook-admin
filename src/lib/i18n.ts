@@ -62,6 +62,7 @@ export interface Translations {
   bodyIncludeField: string;
   bodyIncludeHint: string;
   addHeader: string;
+  update: string;
   headerName: string;
   headerValue: string;
   saving: string;
@@ -104,6 +105,17 @@ export interface Translations {
   confirmEnableMessage: string;
   disableWebhookEffect: string;
   enableWebhookEffect: string;
+  // Unsaved changes guard
+  unsavedChanges: string;
+  unsavedChangesMessage: string;
+  discardChanges: string;
+  // Test webhook
+  testWebhook: string;
+  requestPreview: string;
+  sendTest: string;
+  testSending: string;
+  testResponse: string;
+  testNoBody: string;
 }
 
 export interface LanguageMeta {
@@ -193,6 +205,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Merged into the webhook request body. Must be valid JSON.",
     addHeader: "+ Add",
+    update: "Update",
     headerName: "Header name",
     headerValue: "Header value",
     saving: "Saving…",
@@ -229,6 +242,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "Are you sure you want to enable {label}?",
     disableWebhookEffect: "Disabled webhooks will not fire until re-enabled.",
     enableWebhookEffect: "This webhook will resume firing once enabled.",
+    unsavedChanges: "Unsaved changes",
+    unsavedChangesMessage: "You have unsaved changes. Are you sure you want to discard them?",
+    discardChanges: "Discard changes",
+    testWebhook: "Test webhook",
+    requestPreview: "Request preview",
+    sendTest: "Send test",
+    testSending: "Sending…",
+    testResponse: "Response",
+    testNoBody: "(no body)",
   },
 
   en: {
@@ -283,6 +305,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Merged into the webhook request body. Must be valid JSON.",
     addHeader: "+ Add",
+    update: "Update",
     headerName: "Header name",
     headerValue: "Header value",
     saving: "Saving…",
@@ -319,6 +342,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "Are you sure you want to enable {label}?",
     disableWebhookEffect: "Disabled webhooks will not fire until re-enabled.",
     enableWebhookEffect: "This webhook will resume firing once enabled.",
+    unsavedChanges: "Unsaved changes",
+    unsavedChangesMessage: "You have unsaved changes. Are you sure you want to discard them?",
+    discardChanges: "Discard changes",
+    testWebhook: "Test webhook",
+    requestPreview: "Request preview",
+    sendTest: "Send test",
+    testSending: "Sending…",
+    testResponse: "Response",
+    testNoBody: "(no body)",
   },
 
   zh: {
@@ -373,6 +405,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "合并到 Webhook 请求体中，必须是有效的 JSON。",
     addHeader: "+ 添加",
+    update: "更新",
     headerName: "请求头名称",
     headerValue: "请求头值",
     saving: "保存中…",
@@ -409,6 +442,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "确定要启用 {label} 吗？",
     disableWebhookEffect: "禁用的 Webhook 将不再触发，直到重新启用。",
     enableWebhookEffect: "启用后，此 Webhook 将恢复触发。",
+    unsavedChanges: "未保存的更改",
+    unsavedChangesMessage: "您有未保存的更改，确定要放弃吗？",
+    discardChanges: "放弃更改",
+    testWebhook: "测试 Webhook",
+    requestPreview: "请求预览",
+    sendTest: "发送测试",
+    testSending: "发送中…",
+    testResponse: "响应",
+    testNoBody: "（无请求体）",
   },
 
   es: {
@@ -463,6 +505,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Se fusiona con el cuerpo de la solicitud. Debe ser JSON válido.",
     addHeader: "+ Añadir",
+    update: "Actualizar",
     headerName: "Nombre de cabecera",
     headerValue: "Valor de cabecera",
     saving: "Guardando…",
@@ -499,6 +542,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "¿Seguro que quieres habilitar {label}?",
     disableWebhookEffect: "Los webhooks deshabilitados no se activarán hasta que se vuelvan a habilitar.",
     enableWebhookEffect: "Este webhook reanudará su activación una vez habilitado.",
+    unsavedChanges: "Cambios sin guardar",
+    unsavedChangesMessage: "Tienes cambios sin guardar. ¿Seguro que quieres descartarlos?",
+    discardChanges: "Descartar cambios",
+    testWebhook: "Probar webhook",
+    requestPreview: "Vista previa de solicitud",
+    sendTest: "Enviar prueba",
+    testSending: "Enviando…",
+    testResponse: "Respuesta",
+    testNoBody: "(sin cuerpo)",
   },
 
   hi: {
@@ -553,6 +605,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Webhook अनुरोध बॉडी में मिलाया जाता है। वैध JSON होना चाहिए।",
     addHeader: "+ जोड़ें",
+    update: "अपडेट करें",
     headerName: "हेडर नाम",
     headerValue: "हेडर मान",
     saving: "सहेजा जा रहा है…",
@@ -589,6 +642,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "क्या आप वाकई {label} सक्षम करना चाहते हैं?",
     disableWebhookEffect: "अक्षम Webhooks पुनः सक्षम होने तक नहीं चलेंगे।",
     enableWebhookEffect: "सक्षम होने के बाद यह Webhook फिर से चलने लगेगा।",
+    unsavedChanges: "असहेजे परिवर्तन",
+    unsavedChangesMessage: "आपके पास असहेजे परिवर्तन हैं। क्या आप वाकई उन्हें छोड़ना चाहते हैं?",
+    discardChanges: "परिवर्तन छोड़ें",
+    testWebhook: "Webhook परीक्षण करें",
+    requestPreview: "अनुरोध पूर्वावलोकन",
+    sendTest: "परीक्षण भेजें",
+    testSending: "भेजा जा रहा है…",
+    testResponse: "प्रतिक्रिया",
+    testNoBody: "(कोई बॉडी नहीं)",
   },
 
   ar: {
@@ -643,6 +705,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "يُدمج في جسم طلب Webhook. يجب أن يكون JSON صالحاً.",
     addHeader: "+ إضافة",
+    update: "تحديث",
     headerName: "اسم الرأس",
     headerValue: "قيمة الرأس",
     saving: "جارٍ الحفظ…",
@@ -679,6 +742,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "هل تريد بالتأكيد تفعيل {label}؟",
     disableWebhookEffect: "لن تُطلق Webhooks المعطّلة حتى يتم إعادة تفعيلها.",
     enableWebhookEffect: "سيستأنف هذا Webhook العمل بمجرد تفعيله.",
+    unsavedChanges: "تغييرات غير محفوظة",
+    unsavedChangesMessage: "لديك تغييرات غير محفوظة. هل أنت متأكد من أنك تريد تجاهلها؟",
+    discardChanges: "تجاهل التغييرات",
+    testWebhook: "اختبار Webhook",
+    requestPreview: "معاينة الطلب",
+    sendTest: "إرسال اختبار",
+    testSending: "جارٍ الإرسال…",
+    testResponse: "الاستجابة",
+    testNoBody: "(بدون جسم)",
   },
 
   fr: {
@@ -733,6 +805,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Fusionné dans le corps de la requête webhook. Doit être du JSON valide.",
     addHeader: "+ Ajouter",
+    update: "Mettre à jour",
     headerName: "Nom de l'en-tête",
     headerValue: "Valeur de l'en-tête",
     saving: "Enregistrement…",
@@ -769,6 +842,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "Voulez-vous vraiment activer {label} ?",
     disableWebhookEffect: "Les webhooks désactivés ne se déclencheront pas tant qu'ils ne sont pas réactivés.",
     enableWebhookEffect: "Ce webhook reprendra son déclenchement une fois activé.",
+    unsavedChanges: "Modifications non enregistrées",
+    unsavedChangesMessage: "Vous avez des modifications non enregistrées. Voulez-vous vraiment les abandonner ?",
+    discardChanges: "Abandonner les modifications",
+    testWebhook: "Tester le webhook",
+    requestPreview: "Aperçu de la requête",
+    sendTest: "Envoyer le test",
+    testSending: "Envoi…",
+    testResponse: "Réponse",
+    testNoBody: "(aucun corps)",
   },
 
   pt: {
@@ -823,6 +905,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Mesclado ao corpo da requisição webhook. Deve ser JSON válido.",
     addHeader: "+ Adicionar",
+    update: "Atualizar",
     headerName: "Nome do cabeçalho",
     headerValue: "Valor do cabeçalho",
     saving: "Salvando…",
@@ -859,6 +942,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "Tem certeza de que deseja ativar {label}?",
     disableWebhookEffect: "Webhooks desativados não dispararão até serem reativados.",
     enableWebhookEffect: "Este webhook voltará a disparar uma vez ativado.",
+    unsavedChanges: "Alterações não salvas",
+    unsavedChangesMessage: "Você tem alterações não salvas. Tem certeza de que deseja descartá-las?",
+    discardChanges: "Descartar alterações",
+    testWebhook: "Testar webhook",
+    requestPreview: "Prévia da requisição",
+    sendTest: "Enviar teste",
+    testSending: "Enviando…",
+    testResponse: "Resposta",
+    testNoBody: "(sem corpo)",
   },
 
   bn: {
@@ -913,6 +1005,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Webhook অনুরোধ বডিতে মেশানো হয়। বৈধ JSON হতে হবে।",
     addHeader: "+ যোগ করুন",
+    update: "আপডেট করুন",
     headerName: "হেডারের নাম",
     headerValue: "হেডারের মান",
     saving: "সংরক্ষণ হচ্ছে…",
@@ -949,6 +1042,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "আপনি কি সত্যিই {label} সক্রিয় করতে চান?",
     disableWebhookEffect: "নিষ্ক্রিয় Webhooks পুনরায় সক্রিয় না হওয়া পর্যন্ত কাজ করবে না।",
     enableWebhookEffect: "সক্রিয় হলে এই Webhook আবার কাজ শুরু করবে।",
+    unsavedChanges: "অসংরক্ষিত পরিবর্তন",
+    unsavedChangesMessage: "আপনার অসংরক্ষিত পরিবর্তন আছে। আপনি কি সত্যিই সেগুলো বাতিল করতে চান?",
+    discardChanges: "পরিবর্তন বাতিল করুন",
+    testWebhook: "Webhook পরীক্ষা করুন",
+    requestPreview: "অনুরোধ প্রিভিউ",
+    sendTest: "পরীক্ষা পাঠান",
+    testSending: "পাঠানো হচ্ছে…",
+    testResponse: "প্রতিক্রিয়া",
+    testNoBody: "(কোনো বডি নেই)",
   },
 
   ru: {
@@ -1003,6 +1105,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Объединяется с телом запроса вебхука. Должен быть валидным JSON.",
     addHeader: "+ Добавить",
+    update: "Обновить",
     headerName: "Имя заголовка",
     headerValue: "Значение заголовка",
     saving: "Сохранение…",
@@ -1039,6 +1142,15 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "Вы уверены, что хотите включить {label}?",
     disableWebhookEffect: "Отключённые вебхуки не будут срабатывать до повторного включения.",
     enableWebhookEffect: "После включения вебхук возобновит работу.",
+    unsavedChanges: "Несохранённые изменения",
+    unsavedChangesMessage: "У вас есть несохранённые изменения. Вы уверены, что хотите их отменить?",
+    discardChanges: "Отменить изменения",
+    testWebhook: "Тест вебхука",
+    requestPreview: "Предпросмотр запроса",
+    sendTest: "Отправить тест",
+    testSending: "Отправка…",
+    testResponse: "Ответ",
+    testNoBody: "(тело отсутствует)",
   },
 
   ja: {
@@ -1093,6 +1205,7 @@ export const translations: Record<Lang, Translations> = {
     bodyIncludeField: "bodyInclude (JSON)",
     bodyIncludeHint: "Webhookリクエストボディにマージされます。有効なJSONである必要があります。",
     addHeader: "+ 追加",
+    update: "更新",
     headerName: "ヘッダー名",
     headerValue: "ヘッダー値",
     saving: "保存中…",
@@ -1129,5 +1242,14 @@ export const translations: Record<Lang, Translations> = {
     confirmEnableMessage: "{label} を本当に有効化しますか？",
     disableWebhookEffect: "無効化されたWebhookは再有効化されるまで実行されません。",
     enableWebhookEffect: "有効化するとこのWebhookは再び実行されます。",
+    unsavedChanges: "未保存の変更",
+    unsavedChangesMessage: "未保存の変更があります。破棄してよろしいですか？",
+    discardChanges: "変更を破棄",
+    testWebhook: "Webhookをテスト",
+    requestPreview: "リクエストプレビュー",
+    sendTest: "テスト送信",
+    testSending: "送信中…",
+    testResponse: "レスポンス",
+    testNoBody: "(ボディなし)",
   },
 };

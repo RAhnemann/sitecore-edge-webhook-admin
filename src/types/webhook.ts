@@ -45,7 +45,7 @@ export interface EntityUpdate {
     | "LayoutData"
     | "SiteInfo"
     | "DictionaryEntry";
-  operation: "update" | "delete";
+  operation: "Update" | "Delete";
   entity_culture: string;
 }
 
@@ -54,6 +54,14 @@ export interface WebHookRequest {
   invocation_id: string;
   updates: EntityUpdate[];
   continues: boolean;
+}
+
+/** Result returned by the test-webhook proxy route */
+export interface TestWebhookResult {
+  status: number;
+  statusText: string;
+  durationMs: number;
+  body: string;
 }
 
 /** Session-stored connection settings */

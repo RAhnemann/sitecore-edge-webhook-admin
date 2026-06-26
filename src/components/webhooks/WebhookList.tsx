@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, Fragment } from "react";
-import type { Webhook, WebhookEdit } from "@/types/webhook";
+import type { Webhook, WebhookEdit, TestWebhookResult } from "@/types/webhook";
 import { WebhookForm } from "./WebhookForm";
-import { updateWebhook, enableWebhook, disableWebhook, deleteWebhook } from "@/lib/api";
+import { updateWebhook, enableWebhook, disableWebhook, deleteWebhook, testWebhook, getWebhook } from "@/lib/api";
 import { useTranslation } from "@/context/LanguageContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
@@ -34,6 +35,10 @@ interface WebhookListProps {
 export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListProps) {
   const { t, meta } = useTranslation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editWebhook, setEditWebhook] = useState<Webhook | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editIsDirty, setEditIsDirty] = useState(false);
+  const [discardPending, setDiscardPending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Webhook | null>(null);
@@ -41,14 +46,45 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
   const [confirmToggle, setConfirmToggle] = useState<Webhook | null>(null);
   const [toggling, setToggling] = useState(false);
   const [runsId, setRunsId] = useState<string | null>(null);
+  const [testTarget, setTestTarget] = useState<Webhook | null>(null);
+  const [testBody, setTestBody] = useState("");
+  const [testResult, setTestResult] = useState<TestWebhookResult | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
+  const [testSending, setTestSending] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
 
   function toggleRuns(id: string) {
     setRunsId((prev) => (prev === id ? null : id));
   }
 
-  function toggleEdit(id: string) {
-    setExpandedId((prev) => (prev === id ? null : id));
+  function closeEditForm() {
+    setExpandedId(null);
+    setEditWebhook(null);
+    setEditIsDirty(false);
     setError(null);
+  }
+
+  async function toggleEdit(id: string) {
+    if (expandedId === id) {
+      if (editIsDirty) { setDiscardPending(true); return; }
+      closeEditForm();
+      return;
+    }
+    if (editIsDirty) { setDiscardPending(true); return; }
+    setError(null);
+    setExpandedId(id);
+    setEditWebhook(null);
+    setEditIsDirty(false);
+    setEditLoading(true);
+    try {
+      const full = await getWebhook(id);
+      setEditWebhook(full);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load webhook.");
+      setExpandedId(null);
+    } finally {
+      setEditLoading(false);
+    }
   }
 
   async function handleUpdate(webhook: Webhook, data: WebhookEdit) {
@@ -56,7 +92,7 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
     setError(null);
     try {
       await updateWebhook(webhook.id, data);
-      setExpandedId(null);
+      closeEditForm();
       onRefresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Update failed.");
@@ -98,6 +134,83 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
       setConfirmDelete(null);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  function buildTestBody(wh: Webhook, extra: Record<string, unknown> = {}): string {
+    if (wh.method !== "POST") return "";
+    if (wh.executionMode === "OnEnd") return wh.body ?? "";
+    return JSON.stringify(
+      {
+        invocation_id: "6a271d7b-92de-4d14-8002-8fc97a46c290",
+        updates: [
+          {
+            identifier: "B43D07BD61D5448F93238B6ACAD4F3C4",
+            entity_definition: "Item",
+            operation: "Update",
+            entity_culture: "en",
+          },
+        ],
+        continues: false,
+        ...extra,
+      },
+      null,
+      2
+    );
+  }
+
+  async function openTest(webhook: Webhook) {
+    // Set body from list-webhook data immediately so the dialog is usable right away
+    setTestTarget(webhook);
+    setTestBody(buildTestBody(webhook));
+    setTestResult(null);
+    setTestError(null);
+    setTestLoading(true);
+    try {
+      const full = await getWebhook(webhook.id);
+      // Merge bodyInclude into the sample body if present
+      let extra: Record<string, unknown> = {};
+      if (full.executionMode !== "OnEnd" && full.bodyInclude) {
+        try {
+          const parsed =
+            typeof full.bodyInclude === "string"
+              ? JSON.parse(full.bodyInclude)
+              : full.bodyInclude;
+          if (parsed !== null && typeof parsed === "object") {
+            extra = parsed as Record<string, unknown>;
+          }
+        } catch { /* leave extra empty */ }
+      }
+      setTestTarget(full);
+      setTestBody(buildTestBody(full, extra));
+    } catch (err) {
+      setTestError(err instanceof Error ? err.message : "Failed to load webhook details.");
+      // testTarget and testBody already have usable list-webhook values
+    } finally {
+      setTestLoading(false);
+    }
+  }
+
+  function closeTest() {
+    setTestTarget(null);
+    setTestResult(null);
+    setTestError(null);
+    setTestSending(false);
+    setTestLoading(false);
+  }
+
+  async function handleSendTest() {
+    if (!testTarget) return;
+    setTestSending(true);
+    setTestResult(null);
+    setTestError(null);
+    try {
+      const result = await testWebhook(testTarget, testBody);
+      setTestResult(result);
+    } catch (err) {
+      setTestError(err instanceof Error ? err.message : "Test failed.");
+    } finally {
+      setTestSending(false);
     }
   }
 
@@ -197,6 +310,16 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
                         type="button"
                         size="icon-sm"
                         variant="ghost"
+                        colorScheme="neutral"
+                        title={t.testWebhook}
+                        onClick={() => openTest(webhook)}
+                      >
+                        <FlaskIcon />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
                         colorScheme={webhook.disabled ? "success" : "neutral"}
                         title={webhook.disabled ? t.enable : t.disable}
                         onClick={() => setConfirmToggle(webhook)}
@@ -221,13 +344,18 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
                 {isEditing && (
                   <TableRow key={`${webhook.id}-edit`}>
                     <TableCell colSpan={6} className="bg-muted p-4">
-                      <WebhookForm
-                        initial={webhook}
-                        currentUser={currentUser}
-                        onSubmit={(data) => handleUpdate(webhook, data)}
-                        onCancel={() => setExpandedId(null)}
-                        isSubmitting={submitting}
-                      />
+                      {editLoading ? (
+                        <p className="text-sm text-center text-muted-foreground py-2">{t.loadingWebhooks}</p>
+                      ) : editWebhook ? (
+                        <WebhookForm
+                          initial={editWebhook}
+                          currentUser={currentUser}
+                          onSubmit={(data) => handleUpdate(editWebhook, data)}
+                          onCancel={() => { if (editIsDirty) { setDiscardPending(true); } else { closeEditForm(); } }}
+                          onDirtyChange={setEditIsDirty}
+                          isSubmitting={submitting}
+                        />
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 )}
@@ -266,6 +394,118 @@ export function WebhookList({ webhooks, currentUser, onRefresh }: WebhookListPro
           })}
         </TableBody>
       </Table>
+
+      {/* Discard changes confirmation */}
+      <Dialog open={discardPending} onOpenChange={(open) => !open && setDiscardPending(false)}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle>{t.unsavedChanges}</DialogTitle>
+            <DialogDescription>{t.unsavedChangesMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" colorScheme="neutral" onClick={() => setDiscardPending(false)}>
+              {t.cancel}
+            </Button>
+            <Button colorScheme="danger" onClick={() => { setDiscardPending(false); closeEditForm(); }}>
+              {t.discardChanges}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Test webhook dialog */}
+      <Dialog open={!!testTarget} onOpenChange={(open) => !open && closeTest()}>
+        <DialogContent size="md" className="flex flex-col max-h-[85vh]">
+          {testTarget && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t.testWebhook}</DialogTitle>
+                <DialogDescription>{testTarget.label}</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 overflow-y-auto min-h-0 flex-1">
+                {testLoading ? (
+                  <p className="text-sm text-center text-muted-foreground py-4">{t.loadingWebhooks}</p>
+                ) : (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                    {t.requestPreview}
+                  </p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge colorScheme="primary" size="sm">{testTarget.method}</Badge>
+                    <code className="text-xs text-muted-foreground truncate flex-1">{testTarget.uri}</code>
+                  </div>
+                  {Object.keys(testTarget.headers ?? {}).length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                        {t.customHeaders}
+                      </p>
+                      <div className="space-y-0.5">
+                        {Object.entries(testTarget.headers ?? {}).map(([k, v]) => (
+                          <div key={k} className="text-xs font-mono text-muted-foreground">
+                            {k}: {v}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {testTarget.method === "POST" ? (
+                    <Textarea
+                      value={testBody}
+                      onChange={(e) => setTestBody(e.target.value)}
+                      className="text-xs font-mono min-h-0 h-32 resize-none"
+                      placeholder={t.testNoBody}
+                    />
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">{t.testNoBody}</p>
+                  )}
+                </div>
+                )}
+
+                {testError && (
+                  <Alert variant="danger">
+                    <AlertDescription>{testError}</AlertDescription>
+                  </Alert>
+                )}
+
+                {testResult && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      {t.testResponse}
+                    </p>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Badge
+                        colorScheme={testResult.status >= 200 && testResult.status < 300 ? "success" : "danger"}
+                        size="sm"
+                      >
+                        {testResult.status || "—"} {testResult.statusText}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{testResult.durationMs}ms</span>
+                    </div>
+                    {testResult.body && (
+                      <pre className="text-xs bg-muted p-2 rounded border border-border overflow-auto max-h-32 font-mono whitespace-pre-wrap break-all">
+                        {testResult.body}
+                      </pre>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" colorScheme="neutral" onClick={closeTest} disabled={testSending}>
+                  {t.cancel}
+                </Button>
+                <Button colorScheme="primary" onClick={handleSendTest} disabled={testSending || testLoading}>
+                  {testSending && (
+                    <span aria-hidden="true" className="inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  )}
+                  {testSending ? t.testSending : t.sendTest}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Enable/Disable confirmation dialog */}
       <Dialog open={!!confirmToggle} onOpenChange={(open) => !open && setConfirmToggle(null)}>
@@ -347,6 +587,15 @@ function formatTimestamp(ts: string, locale: string, hour12: boolean): string {
   } catch {
     return ts;
   }
+}
+
+function FlaskIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+      <path d="M4.5 1v3.5L2 9c-.3.6 0 1.5 1 1.5h6c1 0 1.3-.9 1-1.5L7.5 4.5V1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="3.5" y1="3" x2="8.5" y2="3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 function EditIcon() {

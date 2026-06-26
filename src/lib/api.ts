@@ -9,7 +9,7 @@
  */
 
 import { loadConnectionSettings } from "@/lib/session";
-import type { Webhook, WebhookEdit } from "@/types/webhook";
+import type { Webhook, WebhookEdit, TestWebhookResult } from "@/types/webhook";
 
 function getSettings() {
   const settings = loadConnectionSettings();
@@ -97,6 +97,21 @@ export async function enableWebhook(webhook: Webhook): Promise<Webhook> {
 /** Disable an active webhook — sends PUT with disabled: true */
 export async function disableWebhook(webhook: Webhook): Promise<Webhook> {
   return updateWebhook(webhook.id, togglePayload(webhook, true));
+}
+
+/** Send a test request to a webhook's URI via the server-side proxy */
+export async function testWebhook(webhook: Webhook, body: string): Promise<TestWebhookResult> {
+  const res = await fetch("/api/test-webhook", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      uri: webhook.uri,
+      method: webhook.method,
+      headers: webhook.headers ?? {},
+      ...(webhook.method === "POST" ? { body } : {}),
+    }),
+  });
+  return handleResponse<TestWebhookResult>(res);
 }
 
 /** Delete a webhook */

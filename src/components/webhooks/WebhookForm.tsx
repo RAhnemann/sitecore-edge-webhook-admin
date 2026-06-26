@@ -20,6 +20,7 @@ interface WebhookFormProps {
   currentUser: string;
   onSubmit: (data: WebhookEdit) => Promise<void>;
   onCancel: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
   isSubmitting?: boolean;
 }
 
@@ -28,22 +29,41 @@ export function WebhookForm({
   currentUser,
   onSubmit,
   onCancel,
+  onDirtyChange,
   isSubmitting = false,
 }: WebhookFormProps) {
   const { t } = useTranslation();
 
-  const [form, setForm] = useState<Omit<WebhookEdit, never>>({
-    label: "",
-    uri: "",
-    method: "POST",
-    executionMode: "OnEnd",
-    body: "",
-    bodyInclude: "",
-    headers: {},
-    createdBy: currentUser,
-  });
+  const [form, setForm] = useState<Omit<WebhookEdit, never>>(() =>
+    initial
+      ? {
+          label: initial.label,
+          uri: initial.uri,
+          method: initial.method,
+          executionMode: initial.executionMode,
+          body: initial.body ?? "",
+          bodyInclude: typeof initial.bodyInclude === "string"
+            ? initial.bodyInclude
+            : initial.bodyInclude != null
+            ? JSON.stringify(initial.bodyInclude, null, 2)
+            : "",
+          headers: initial.headers ?? {},
+          createdBy: initial.createdBy,
+        }
+      : {
+          label: "",
+          uri: "",
+          method: "POST",
+          executionMode: "OnEnd",
+          body: "",
+          bodyInclude: "",
+          headers: {},
+          createdBy: currentUser,
+        }
+  );
   const [headerKey, setHeaderKey] = useState("");
   const [headerVal, setHeaderVal] = useState("");
+  const [editingHeader, setEditingHeader] = useState<{ key: string; originalValue: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -52,24 +72,10 @@ export function WebhookForm({
     }
   }, [currentUser, initial]);
 
-  useEffect(() => {
-    if (initial) {
-      setForm({
-        label: initial.label,
-        uri: initial.uri,
-        method: initial.method,
-        executionMode: initial.executionMode,
-        body: initial.body ?? "",
-        bodyInclude: initial.bodyInclude ?? "",
-        headers: initial.headers ?? {},
-        createdBy: initial.createdBy,
-      });
-    }
-  }, [initial]);
-
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: "" }));
+    onDirtyChange?.(true);
   }
 
   function addHeader() {
@@ -77,12 +83,36 @@ export function WebhookForm({
     set("headers", { ...form.headers, [headerKey.trim()]: headerVal.trim() });
     setHeaderKey("");
     setHeaderVal("");
+    setEditingHeader(null);
+  }
+
+  function setHeadersSilently(next: Record<string, string>) {
+    setForm((prev) => ({ ...prev, headers: next }));
+    setErrors((prev) => ({ ...prev, headers: "" }));
   }
 
   function removeHeader(key: string) {
     const next = { ...form.headers };
     delete next[key];
     set("headers", next);
+  }
+
+  function startEditHeader(key: string, value: string) {
+    const next = { ...form.headers };
+    delete next[key];
+    setHeadersSilently(next);
+    setHeaderKey(key);
+    setHeaderVal(value);
+    setEditingHeader({ key, originalValue: value });
+  }
+
+  function cancelEditHeader() {
+    if (editingHeader !== null) {
+      setHeadersSilently({ ...form.headers, [editingHeader.key]: editingHeader.originalValue });
+    }
+    setHeaderKey("");
+    setHeaderVal("");
+    setEditingHeader(null);
   }
 
   function validate(): boolean {
@@ -108,9 +138,11 @@ export function WebhookForm({
       executionMode: form.executionMode,
       headers: form.headers,
       createdBy: form.createdBy,
-      ...(form.executionMode === "OnEnd"
+      ...(form.executionMode === "OnEnd" && form.method === "POST"
         ? { body: form.body }
-        : { bodyInclude: form.bodyInclude }),
+        : form.executionMode === "OnUpdate" && form.bodyInclude
+        ? { bodyInclude: form.bodyInclude }
+        : {}),
     };
     await onSubmit(payload);
   }
@@ -152,7 +184,7 @@ export function WebhookForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="POST">POST</SelectItem>
-                <SelectItem value="GET">GET</SelectItem>
+                {form.executionMode === "OnEnd" && <SelectItem value="GET">GET</SelectItem>}
               </SelectContent>
             </Select>
           </Field>
@@ -165,7 +197,14 @@ export function WebhookForm({
 
         <div className="grid grid-cols-2 gap-2">
           <Field label={t.executionMode}>
-            <Select value={form.executionMode} onValueChange={(v) => set("executionMode", v as ExecutionMode)}>
+            <Select
+              value={form.executionMode}
+              onValueChange={(v) => {
+                const mode = v as ExecutionMode;
+                if (mode === "OnUpdate" && form.method === "GET") set("method", "POST");
+                set("executionMode", mode);
+              }}
+            >
               <SelectTrigger size="sm" className="h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
@@ -186,7 +225,7 @@ export function WebhookForm({
           </Field>
         </div>
 
-        {form.executionMode === "OnEnd" ? (
+        {form.executionMode === "OnEnd" && form.method === "POST" ? (
           <Field label={t.bodyJson} error={errors.body}>
             <Textarea
               value={form.body}
@@ -196,7 +235,7 @@ export function WebhookForm({
               className="min-h-0 h-16 text-sm resize-none"
             />
           </Field>
-        ) : (
+        ) : form.executionMode === "OnUpdate" ? (
           <Field label={t.bodyIncludeField} error={errors.bodyInclude}>
             <Textarea
               value={form.bodyInclude}
@@ -207,7 +246,7 @@ export function WebhookForm({
             />
             <p className="text-xs text-muted-foreground mt-1">{t.bodyIncludeHint}</p>
           </Field>
-        )}
+        ) : null}
       </section>
 
       {/* Custom headers */}
@@ -219,6 +258,16 @@ export function WebhookForm({
             <code className="flex-1 px-2 py-1 bg-background border border-border rounded font-mono truncate">
               {k}: {v}
             </code>
+            <Button
+              type="button"
+              size="icon-xs"
+              variant="ghost"
+              colorScheme="neutral"
+              onClick={() => startEditHeader(k, v)}
+              aria-label={`Edit header ${k}`}
+            >
+              ✎
+            </Button>
             <Button
               type="button"
               size="icon-xs"
@@ -249,6 +298,17 @@ export function WebhookForm({
             aria-label={t.headerValue}
             className="flex-1 h-8 text-sm"
           />
+          {editingHeader !== null && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              colorScheme="neutral"
+              onClick={cancelEditHeader}
+            >
+              {t.cancel}
+            </Button>
+          )}
           <Button
             type="button"
             size="sm"
@@ -256,7 +316,7 @@ export function WebhookForm({
             colorScheme="neutral"
             onClick={addHeader}
           >
-            {t.addHeader}
+            {editingHeader !== null ? t.update : t.addHeader}
           </Button>
         </div>
       </section>
