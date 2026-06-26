@@ -257,7 +257,7 @@ To resume, open **Settings** and click **Connect** again.
 
 ## Internationalization
 
-The UI is fully translated into 11 languages. Switch language using the **language switcher** in the top-right corner of the header. The selected language persists for the session.
+The UI is fully translated into 12 languages. Switch language using the **language switcher** in the top-right corner of the header. The selected language persists for the session.
 
 | Code | Language |
 |---|---|
@@ -272,6 +272,9 @@ The UI is fully translated into 11 languages. Switch language using the **langua
 | `bn` | Bengali |
 | `ru` | Russian |
 | `ja` | Japanese |
+| `tlh` | Klingon (tlhIngan Hol) |
+
+> Klingon (`tlh`) is a best-effort translation: authentic vocabulary is used where it exists, while inherently modern terms (Webhook, JSON, URI, HTTP, JWT, OAuth) remain as loan-words. Since `Intl` has no Klingon locale, dates render using `en-US` formatting.
 
 ---
 
@@ -312,7 +315,7 @@ src/
 │   └── useMarketplaceClient.ts   ← Marketplace SDK init + host.user resolution
 ├── lib/
 │   ├── api.ts                    ← Edge Admin API calls (list, get, create, update, enable/disable, delete, test) + SessionExpiredError
-│   ├── i18n.ts                   ← Translation strings for 11 languages
+│   ├── i18n.ts                   ← Translation strings for 12 languages
 │   └── session.ts                ← sessionStorage read/write/clear helpers
 └── types/
     └── webhook.ts                ← Types mirroring the Edge Admin API objects exactly
