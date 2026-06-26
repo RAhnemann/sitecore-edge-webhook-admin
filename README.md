@@ -173,7 +173,7 @@ Only one webhook can be expanded for editing at a time. Opening a second row col
 
 The widget will not silently throw away work in progress. While you have **unsaved edits** in a create or edit form, any action that would navigate away — clicking **Cancel**, switching tabs, opening another row, or jumping to **Settings** — first shows a confirmation dialog so you can keep editing or deliberately discard.
 
-![Unsaved changes confirmation dialog](readme_assets/Unsaved_Changes.png)
+![Unsaved changes confirmation dialog](readme_assets/Cancel_Warning.png)
 
 ---
 
@@ -210,7 +210,7 @@ Click **Send test** to fire the request. The response panel reports the outcome:
 - **Success (2xx)** — a green status badge, the round-trip duration, and the response body.
 - **Failure** — a red status badge with the duration, and the **error message** parsed from the response (the widget surfaces the `error.message` / `message` field from a JSON error body rather than dumping the raw payload).
 
-![The test webhook dialog showing a parsed error message](readme_assets/Test_Webhook_Error.png)
+![The test webhook dialog showing a parsed error message](readme_assets/Test_Webhook_Failed.png)
 
 > Test requests are proxied through a server-side Next.js route (`/api/test-webhook`) to avoid browser CORS restrictions. The proxy only allows `https://` targets, enforces a 10-second timeout, and truncates large response bodies.
 
