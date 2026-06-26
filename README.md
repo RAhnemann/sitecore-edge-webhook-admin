@@ -13,10 +13,13 @@ A browser-based admin tool for managing **Experience Edge webhooks** on Sitecore
   - [Webhooks tab](#webhooks-tab)
   - [Creating a webhook](#creating-a-webhook)
   - [Editing a webhook](#editing-a-webhook)
+  - [Unsaved changes protection](#unsaved-changes-protection)
   - [Enabling and disabling](#enabling-and-disabling)
   - [Deleting a webhook](#deleting-a-webhook)
+- [Testing a webhook](#testing-a-webhook)
 - [Execution log](#execution-log)
 - [Filtering and search](#filtering-and-search)
+- [Session resilience](#session-resilience)
 - [Internationalization](#internationalization)
 - [Security model](#security-model)
 - [Architecture](#architecture)
@@ -33,10 +36,13 @@ The Webhook Admin widget gives SitecoreAI teams a single place to:
 | **View** all webhooks for your tenant | Status, execution mode, recent run history |
 | **Create** new webhooks | Full form with validation — name, URI, method, body, custom headers |
 | **Edit** webhooks inline | Expand any row to update without leaving the list |
+| **Test** webhooks live | Send a real request to the endpoint (with your custom headers) and inspect the response |
 | **Enable / Disable** webhooks | Confirmation dialog before making changes |
 | **Delete** webhooks | Irreversible action guarded by a confirmation dialog |
 | **Browse execution history** | Cross-webhook log sorted newest-first, up to 50 entries |
-| **Filter and search** | Filter by Active / Disabled, search by name or URI |
+| **Filter and search** | Filter by Active / Disabled, search by name or URI, or click a stat card |
+
+Throughout, the widget protects your work — it **warns before discarding unsaved edits**, guides you with **context-aware empty states** when you're not connected or have no results, and **recovers gracefully** when your session expires.
 
 The widget connects directly to the [Edge Admin API](https://doc.sitecore.com/sai/en/developers/sitecoreai/sitecore-experience-manager/webhook-objects.html) using a short-lived JWT that is fetched from Sitecore's OAuth endpoint at connect time and stored only in `sessionStorage` for the duration of the browser tab.
 
@@ -65,16 +71,22 @@ Before you can manage webhooks, you must establish a session. Click the **Settin
 | **Client ID** | Your Sitecore OAuth client ID. |
 | **Client Secret** | Your OAuth client secret. Hidden by default; click the eye icon to reveal. |
 
-Click **Connect** to exchange your credentials for a short-lived JWT. The credentials are discarded immediately after the token is received — only the JWT is retained (in `sessionStorage`).
+Click **Connect** to exchange your credentials for a short-lived JWT — or simply press **Enter** from either field. The credentials are discarded immediately after the token is received — only the JWT is retained (in `sessionStorage`).
 
 ![A picture of the Session Creation Screen](readme_assets/New_Session.png)
 
 Once connected:
 - The status pill in the header turns **green** (Session active)
 - The **Webhooks** tab loads your webhook list automatically
-- The **Create** tab and **+ New webhook** button become available
+- The **Execution log** and **Create** tabs and the **+ New webhook** button become available
 
 To end your session manually, click **Clear session**. The JWT is also cleared automatically when the browser tab is closed.
+
+### Before you connect
+
+Until a session is active, the widget guides you rather than showing an empty list. The **Webhooks** tab displays a prompt with a **Go to Settings** shortcut, and the **Execution log** and **Create** tabs stay hidden — there is nothing to act on without a connection.
+
+![The connect prompt shown before a session is established](readme_assets/Connect_Prompt.png)
 
 ---
 
@@ -100,7 +112,17 @@ Click the `✓ / ✕` count badges on any row to expand an inline panel showing 
 
 **Summary cards**
 
-The four cards at the top always reflect the full unfiltered list, so your overall health is visible regardless of any active search or filter.
+The four cards at the top always reflect the full unfiltered list, so your overall health is visible regardless of any active search or filter. The **Total**, **Active**, and **Disabled** cards are also clickable shortcuts — selecting one applies the matching list filter (the active card is highlighted).
+
+**Empty states**
+
+The list area adapts to context instead of showing a generic "nothing here":
+
+| Situation | What you see |
+|---|---|
+| Not connected | A connect prompt with a **Go to Settings** button |
+| Connected, no webhooks yet | A **+ New webhook** call to action |
+| A search/filter matched nothing | A **Clear filters** shortcut (the stat cards still show your real totals) |
 
 ---
 
@@ -113,10 +135,10 @@ The four cards at the top always reflect the full unfiltered list, so your overa
 |---|---|---|
 | **Name** | Yes | Human-readable label for the webhook |
 | **URI** | Yes | Must be a valid `https://` URL |
-| **HTTP Method** | Yes | `POST` (default) or `GET` |
+| **HTTP Method** | Yes | `POST` (default), or `GET` — `GET` is only available in `OnEnd` mode |
 | **Execution mode** | Yes | See table below |
-| **Body** | No | JSON payload sent with `OnEnd` requests |
-| **Body include** | No | JSON filter applied to `OnUpdate` payloads — must be valid JSON |
+| **Body** | No | JSON payload sent with `OnEnd` + `POST` requests |
+| **Body include** | No | JSON merged into `OnUpdate` payloads — must be valid JSON |
 | **Custom headers** | No | Add any number of `key: value` header pairs |
 | **Created by** | Auto | Populated from your Sitecore user account — read-only |
 
@@ -124,8 +146,14 @@ The four cards at the top always reflect the full unfiltered list, so your overa
 
 | Mode | When it fires | Body field |
 |---|---|---|
-| `OnEnd` | After a publishing job finishes | **Body** — static JSON payload sent with every call |
-| `OnUpdate` | When specific content entities are updated | **Body include** — JSON filter that narrows which updates trigger the call |
+| `OnEnd` | After a publishing job finishes | **Body** — static JSON payload sent with every `POST` call |
+| `OnUpdate` | When specific content entities are updated | **Body include** — JSON merged into the request body |
+
+The body field follows the selected mode and method, so you only ever see the field that applies:
+
+- `OnEnd` + `POST` → **Body** textarea
+- `OnUpdate` → **Body include** textarea (method is forced to `POST`, since `OnUpdate` cannot use `GET`)
+- `OnEnd` + `GET` → no body field (and none is sent)
 
 3. Click **Create webhook**. You are returned to the Webhooks list automatically.
 
@@ -137,13 +165,23 @@ Click the **pencil icon** on any webhook row. An inline form expands below the r
 
 Only one webhook can be expanded for editing at a time. Opening a second row collapses the previous one.
 
+> Editing a custom header value marks the form as changed, but simply clicking a header's edit icon does **not** — intermediate UI actions never trigger a false "unsaved changes" warning.
+
+---
+
+### Unsaved changes protection
+
+The widget will not silently throw away work in progress. While you have **unsaved edits** in a create or edit form, any action that would navigate away — clicking **Cancel**, switching tabs, opening another row, or jumping to **Settings** — first shows a confirmation dialog so you can keep editing or deliberately discard.
+
+![Unsaved changes confirmation dialog](readme_assets/Unsaved_Changes.png)
+
 ---
 
 ### Enabling and disabling
 
 Click the **pause icon** (active webhooks) or **play icon** (disabled webhooks) to toggle state. A confirmation dialog appears before any change is made.
 
-![Dialog box for disabling a webhook](readme_assets/Disable_webhook.png)
+![Dialog box for disabling a webhook](readme_assets/Disable_Webhook.png)
 
 ---
 
@@ -153,9 +191,34 @@ Click the **trash icon** on any row. A confirmation dialog warns that the action
 
 ---
 
+## Testing a webhook
+
+Click the **flask icon** on any row to open the **Test webhook** dialog and send a real request to the endpoint — without waiting for a publish or content update to trigger it.
+
+![The test webhook dialog showing the request preview and a successful response](readme_assets/Test_Webhook.png)
+
+The dialog builds a representative request for you:
+
+| Element | Behaviour |
+|---|---|
+| **Method & URI** | Shown exactly as configured on the webhook |
+| **Custom headers** | Every configured header is listed and **sent with the request** |
+| **Request body** | Editable before sending. `OnEnd` webhooks use the configured body; `OnUpdate` webhooks get a sample `WebHookRequest` with the webhook's **Body include** merged in. `GET` webhooks send no body. |
+
+Click **Send test** to fire the request. The response panel reports the outcome:
+
+- **Success (2xx)** — a green status badge, the round-trip duration, and the response body.
+- **Failure** — a red status badge with the duration, and the **error message** parsed from the response (the widget surfaces the `error.message` / `message` field from a JSON error body rather than dumping the raw payload).
+
+![The test webhook dialog showing a parsed error message](readme_assets/Test_Webhook_Error.png)
+
+> Test requests are proxied through a server-side Next.js route (`/api/test-webhook`) to avoid browser CORS restrictions. The proxy only allows `https://` targets, enforces a 10-second timeout, and truncates large response bodies.
+
+---
+
 ## Execution log
 
-The **Execution log** tab provides a unified, chronological view of recent runs across **all** webhooks — useful for diagnosing failures without opening each webhook individually.
+The **Execution log** tab provides a unified, chronological view of recent runs across **all** webhooks — useful for diagnosing failures without opening each webhook individually. The tab is only available while you have an active session.
 
 ![List showing recent webhook exection](readme_assets/Execution_Log.png)
 
@@ -176,10 +239,19 @@ The Webhooks tab toolbar provides three ways to narrow the list:
 | **All** button | Clears any status filter (shows all webhooks) |
 | **Active** button | Shows only webhooks where `disabled = false` |
 | **Disabled** button | Shows only webhooks where `disabled = true` |
+| **Stat cards** | Clicking **Total**, **Active**, or **Disabled** applies the matching filter |
 
 Search and status filter work together — e.g. searching for `cdn` while the **Active** filter is selected shows only active webhooks whose name or URI contains "cdn".
 
 The summary stat cards at the top always reflect the **full unfiltered count**, not the filtered view.
+
+---
+
+## Session resilience
+
+The JWT issued at connect time is short-lived. Rather than surfacing a raw `401`/`403` API error when it expires, the widget detects the rejection and shows a clear, localized message prompting you to reconnect in **Settings**. This applies to every operation — listing, editing, enabling/disabling, deleting, and loading a webhook for testing — so an expired session never leaves you staring at a cryptic error.
+
+To resume, open **Settings** and click **Connect** again.
 
 ---
 
@@ -222,14 +294,16 @@ The UI is fully translated into 11 languages. Switch language using the **langua
 src/
 ├── app/
 │   ├── api/
-│   │   └── token/
-│   │       └── route.ts          ← Server-side OAuth proxy (avoids CORS)
-│   ├── page.tsx                  ← Root page: tab state, fetch logic, filter state
+│   │   ├── token/
+│   │   │   └── route.ts          ← Server-side OAuth proxy (avoids CORS)
+│   │   └── test-webhook/
+│   │       └── route.ts          ← Server-side proxy for live webhook tests (https-only, 10s timeout)
+│   ├── page.tsx                  ← Root page: tab state, fetch logic, filter state, empty/onboarding states
 │   └── layout.tsx
 ├── components/
 │   └── webhooks/
-│       ├── WebhookList.tsx       ← List rows, inline edit, enable/disable/delete dialogs
-│       ├── WebhookForm.tsx       ← Shared create / edit form with validation
+│       ├── WebhookList.tsx       ← List rows, inline edit, enable/disable/delete/test dialogs
+│       ├── WebhookForm.tsx       ← Shared create / edit form with validation + dirty tracking
 │       ├── ExecutionLog.tsx      ← Cross-webhook run history table
 │       └── SettingsPanel.tsx     ← OAuth connect / disconnect UI
 ├── context/
@@ -237,12 +311,14 @@ src/
 ├── hooks/
 │   └── useMarketplaceClient.ts   ← Marketplace SDK init + host.user resolution
 ├── lib/
-│   ├── api.ts                    ← Edge Admin API calls (list, create, update, delete)
+│   ├── api.ts                    ← Edge Admin API calls (list, get, create, update, enable/disable, delete, test) + SessionExpiredError
 │   ├── i18n.ts                   ← Translation strings for 11 languages
 │   └── session.ts                ← sessionStorage read/write/clear helpers
 └── types/
     └── webhook.ts                ← Types mirroring the Edge Admin API objects exactly
 ```
+
+`api.ts` throws a typed `SessionExpiredError` on a `401`/`403`, which the UI maps to the friendly reconnect message described under [Session resilience](#session-resilience).
 
 ### Data flow
 
@@ -254,8 +330,12 @@ Browser
   │                                                 returns { access_token }
   │                              JWT saved to sessionStorage
   │
-  └── Webhooks / Log tab
-        └── fetch() with Bearer header  →  edge.sitecorecloud.io/api/admin/v1/webhooks
+  ├── Webhooks / Log tab
+  │     └── fetch() with Bearer header  →  edge.sitecorecloud.io/api/admin/v1/webhooks
+  │
+  └── Test webhook dialog
+        └── POST /api/test-webhook  →  Next.js route  →  target endpoint (https only)
+                                        returns { status, statusText, durationMs, body }
 ```
 
 ---
